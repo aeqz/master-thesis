@@ -1,0 +1,17 @@
+.DS_Store
+*.acn
+*.acr
+*.alg
+*.aux
+*.bbl
+*.blg
+*.glg
+*.glo
+*.gls
+*.idx
+*.ist
+*.lof
+*.log
+*.lot
+*.out
+*.toc

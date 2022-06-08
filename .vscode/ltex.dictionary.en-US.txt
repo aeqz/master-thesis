@@ -1,0 +1,16 @@
+TODO
+Satisfiability
+Ballester
+smt
+citep
+citet
+QuickCheck
+Propery-based
+excheck
+Freudlund
+Lars-Åke
+CAVI-ART
+WhyML
+MATHSAT
+Yices
+Dafny

@@ -1,0 +1,88 @@
+\documentclass[11pt,a4paper,twoside]{book}
+
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+%            Preamble
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\usepackage{TeXiS/TeXiS}
+
+\include{definitions}
+
+%
+% Metadata
+%
+\hypersetup{%
+  pdftitle = {\titulo},
+  pdfsubject = {Plantilla de Tesis},
+  pdfkeywords = {Plantilla, LaTeX, tesis, trabajo de
+    investigación, trabajo de Master},
+  pdfauthor = {\textcopyright\ \autor},
+  pdfcreator = {\LaTeX\ con el paquete \flqq hyperref\frqq},
+  pdfproducer = {pdfeTeX-0.\the\pdftexversion\pdftexrevision},
+}
+\pdfinfo{/CreationDate (\today)} % TODO metadata
+
+
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+%                        Document
+%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\begin{document}
+
+\input{TeXiS/TeXiS_hyphenation_es}
+\frontmatter
+\pagestyle{empty}
+
+\include{Envelope/cover}
+%\include{Envelope/authorization}
+\include{Envelope/dedication}
+\include{Envelope/acknowledgements}
+\include{Envelope/abstract_es}
+\begin{otherlanguage}{english}
+\include{Envelope/abstract_en}
+
+\ifx\generatoc\undefined
+\else
+\include{TeXiS/TeXiS_toc}
+\fi
+
+\mainmatter
+
+\pagestyle{fancy}
+\restauraCabecera
+
+%
+% Chapters
+%
+\include{Chapters/Introduction}
+\include{Chapters/StateOfTheArt}
+\include{Chapters/Preliminaries}
+\include{Chapters/SMTSolverIntegration}
+\include{Chapters/IntermediateRepresentation}
+\include{Chapters/Translation}
+\include{Chapters/ConclusionsFutureWork}
+
+%
+% Bibliography
+%
+\include{Envelope/bibliography}
+
+%
+% Appendixes
+%
+\appendix
+\include{Appendixes/appendixA}
+\include{Appendixes/appendixB}
+\backmatter
+
+%
+% Acronyms
+%
+\include{TeXiS/TeXiS_acron}
+
+%
+% Ending
+%
+\include{Envelope/ending}
+\end{otherlanguage}
+\end{document}

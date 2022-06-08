@@ -1,0 +1,1 @@
+{"rule":"TO_DO_HYPHEN","sentence":"^\\QREADME.md LaTeX code formatter Search for TODOs\\E$"}
