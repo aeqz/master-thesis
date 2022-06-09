@@ -57,7 +57,8 @@
 % Antes de  la creación  de los índices,  se añaden los  marcadores de
 % nivel 1.
 
-\pdfbookmark{Índices}{indices}
+\cleardoublepage
+\pdfbookmark{Contents}{indices}
 
 % Tabla de contenidos.
 %
@@ -68,9 +69,9 @@
 % documento se utiliza para  generar la verdadera página de contenidos
 % usando la  información sobre los  capítulos y demás guardadas  en el
 % .toc
-\pdfbookmark[1]{Tabla de Contenidos}{tabla de contenidos}
+\pdfbookmark[1]{Table of Contents}{tabla de contenidos}
 
-\cabeceraEspecial{\'Indice}
+\cabeceraEspecial{Table of Contents}
 
 \tableofcontents
 
@@ -81,9 +82,9 @@
 % La idea es semejante que para  el .toc del índice, pero ahora se usa
 % extensión .lof (List Of Figures) con la información de las figuras.
 
-\pdfbookmark[1]{Índice de figuras}{indice de figuras}
+\pdfbookmark[1]{List of Figures}{indice de figuras}
 
-\cabeceraEspecial{\'Indice de figuras}
+\cabeceraEspecial{List of Figures}
 
 \listoffigures
 
@@ -92,9 +93,10 @@
 % Índice de tablas
 % Como antes, pero ahora .lot (List Of Tables)
 
-\pdfbookmark[1]{Índice de tablas}{indice de tablas}
+\cleardoublepage
+\pdfbookmark[1]{List Of Tables}{indice de tablas}
 
-\cabeceraEspecial{\'Indice de tablas}
+\cabeceraEspecial{List of Tables}
 
 \listoftables
 
