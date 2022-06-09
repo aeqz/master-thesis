@@ -1,7 +1,7 @@
 NOMBRE_LATEX = Thesis
 
 
-pdflatex:
+full:
 	pdflatex $(NOMBRE_LATEX)
 	bibtex $(NOMBRE_LATEX)
 	makeglossaries $(NOMBRE_LATEX)
