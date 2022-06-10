@@ -15,3 +15,8 @@ MATHSAT
 Yices
 Dafny
 metaprogramming
+satisfiable
+prover
+arity
+Read-Eval-Print-Loop
+unsatisfiable

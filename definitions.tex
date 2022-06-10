@@ -10,4 +10,22 @@
 \newacronym{dsl}{DSL}{Domain Specific Language}
 \newacronym{ir}{IR}{Intermediate Representation}
 \newacronym{nif}{NIF}{Native Implemented Function}
+\newacronym{repl}{REPL}{Read-Eval-Print-Loop}
 \newacronym{smt}{SMT}{Satisfiability Modulo Theories}
+
+%
+% Commands
+%
+\newcommand{\Term}{\ensuremath{\mathit{Term}}}
+\newcommand{\skipE}{\ensuremath{\textbf{skip}}}
+\newcommand{\failE}{\ensuremath{\textbf{fail}}}
+\newcommand{\localE}{\ensuremath{\textbf{local}}}
+\newcommand{\addE}{\ensuremath{\textbf{add}}}
+\newcommand{\doW}{\ensuremath{\textbf{do}}}
+\newcommand{\elseW}{\ensuremath{\textbf{else}}}
+\newcommand{\Exp}[1]{\ensuremath{\mathbf{Exp}^{#1}}}
+\newcommand{\whenUnsatW}{\ensuremath{\textbf{when-unsat}}}
+\newcommand{\whenUnsatE}[3]{\whenUnsatW~#1~\doW~#2~\elseW~#3}
+\newcommand{\declareConstE}[1]{\ensuremath{\textbf{declare-const}~#1}}
+\newcommand{\BS}[4]{\ensuremath{\langle #1,~#2,~#3\rangle \Downarrow #4}}
+\newcommand{\unsat}[1]{\ensuremath{\mathit{unsat}~\llbracket#1\rrbracket}}

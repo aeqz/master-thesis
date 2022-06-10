@@ -1,152 +1,214 @@
 \chapter{Preliminaries}
 \label{cap:preliminaries}
 
-This chapter introduces some required topics and tools that are relevant to
-our project. 
+This chapter introduces some required topics and tools that are a basis to
+our project.
 
-On the one hand, Elixir is the programming language that is the verification 
-subject of this document and, at the same time, the one in which our 
-implementation has been coded. 
+On the one hand, Elixir is the programming language that is the verification
+subject of this document and, at the same time, the one in which our
+implementation has been coded.
 
 On the other hand, our verification system relies on the \gls{smt} problem and
-its encodings in SMT-LIB, a standard language and interface to interact with 
+its encoding in SMT-LIB, a standard language and interface to interact with
 theorem provers such as Z3.
 
 \section{Elixir}
 
 Elixir is a general-purpose programming language that runs on the Erlang
-Virtual Machine, where also the Erlang programming language runs. Both
-languages share some features, like their actor-based concurrency model, and
-have a native capability to interoperate between them. Although Elixir is
-younger than Erlang, this has allowed the former to be part of an ecosystem
-which has been developed across more than three decades.
+Virtual Machine, where also the Erlang programming language runs [referenciar].
+Both of them share some features, like their actor-based concurrency model,
+and have a native capability to interoperate. Although Elixir is younger than
+Erlang, this has allowed the former to be part of an ecosystem which has been
+developed across more than three decades.
 
 We have chosen such a programming language for this research because,
 first, it is a modern programming language ready to be used in the
 industry [referenciar]. Second, it has the unusual property in formal 
 verification to be dynamically typed, but its functional programming principles
-will make its reasoning easier. Finally, its metaprogramming capabilities will
-allow us to extend it according to our needs without requiring to modify its 
-compiler.
+will make it easier to reason about. Finally, its metaprogramming capabilities
+will allow us to extend it according to our needs without requiring to modify
+its compiler.
 
 \subsection{General description}
 
 In this section, we introduce the basic concepts and constructs of sequential
-Elixir programming. [El objetivo de esto es, a parte de presentar el lenguaje,
-el de exponer cómo se comporta el subconjunto del lenguaje que hemos estudiado
-por el momento para su verificación].
+programming in Elixir. Our aim is to show the behavior of the language subset
+that is studied later in this document for its verification, and also
+its metaprogramming mechanism based on macros, on top of which our proposed
+verification system has been implemented.
 
-[mencionar iex para los snippets]
+The following examples will be exposed in the Elixir \gls{repl}, 
+called \verb|iex|, where \verb|iex>| represents its default prompt. This is a
+\verb|string| literal:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> "Hello world"
+"Hello world"
+\end{lstlisting}
 
 \subsubsection{Value types}
 
-As usual, one of its built-in value types is the \verb|integer|, for which
-arithmetic operators behave as expected:
+As usual, one of the core value types in Elixir is the \verb|integer|, for
+which arithmetic operators behave as expected:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-  iex> (2 + 2) * 5
-  20
-  iex> -1
-  -1
-  iex> 1 / 0
-  ** (ArithmeticError)
+iex> (2 + 2) * 5
+20
+iex> -1
+-1
+iex> 1 / 0
+** (ArithmeticError)
 \end{lstlisting}
 
-The \verb|boolean| type is also present, but its operators have some
-worth to mention semantics when involving non-\verb|boolean| types:
+The \verb|boolean| value type is also at its core, but its operators have some
+worth to mention semantics when involving non-\verb|boolean| types, and also 
+with respect to short-circuit evaluation:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-  iex> true and 2
-  2
-  iex> 2 and true
-  ** (BadBooleanError)
-  iex> false or 2
-  2
-  iex> 2 or false
-  ** (BadBooleanError)
-  true
+iex> true and 2 # Evaluates to the second term
+2
+iex> 2 and true # Requires the first one to be a boolean
+** (BadBooleanError)
+iex> false and 1 / 0 # Does not evaluate the second term
+false
 \end{lstlisting}
 
-And also with respect to short-circuit evaluation:
+Some built-in Elixir functions allow checking if a given value is of a given
+type in terms of a \verb|boolean| result:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-  iex> false and 1 / 0
-  false
-  iex> true or 1 / 0
-  true
-\end{lstlisting}
-
-Some built-in Elixir functions allow to check if a term is of a given type in 
-terms of a \verb|boolean| result:
-
-\begin{lstlisting}[language=elixir,numbers=none,frame=none]
-  iex> is_boolean(true)
-  true
-  iex> is_boolean(2)
-  false
-  iex> is_integer(2)
-  true
+iex> is_boolean(true)
+true
+iex> is_boolean(2)
+false
+iex> is_integer(2)
+true
 \end{lstlisting}
 
 Equality and comparison operators also evaluate to \verb|boolean| values and
-allow to mix types:
+allow mixing types:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-  iex> 2 === true
-  false
-  iex> 2 === 2
-  true
-  iex> 2 > 1
-  true
+iex> 2 === 2
+true
+iex> 2 === true
+false
+iex> 2 !== true
+true
+iex> 2 > 1
+true
+iex> 2 < true
+true
 \end{lstlisting}
 
 \subsubsection{Collection types and pattern matching}
 
 One of the simplest built-in collection types in Elixir is the inductive 
-\verb|list|, which can be .
+\verb|list|, which consists of nested cons cells (i.e. pairs) and can be
+written in different ways:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-  iex> [1, 2, false]
-  [1, 2, false]
-  iex> [1, 2 | [false]]
-  [1, 2, false]
-  iex> [1 | [2 | [false | []]]]
-  [1, 2, false]
-  iex> [1 | [2 | [3 | 4]]]
-  [1, 2, 3 | 4] # An improper list
+iex> [] # The empty list 
+[] 
+iex> [3 | []] # A cons cell
+[3]
+iex> [1 | [2 | [3 | []]]]
+[1, 2, 3]
+iex> [1, 2 | [3]]
+[1, 2, 3]
+iex> [1, 2, 3]
+[1, 2, 3]
 \end{lstlisting}
+
+It is not required for the \verb|list| elements to be of the same type, and
+improper lists (i.e. those that do not have an empty list as the second element
+in the last cons cell [referenciar docs]) are also allowed:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-  iex> hd([1, 2, false])
-  1
-  iex> tl([1, 2, false])
-  [2, false]
-  iex> hd([])
-  ** (ArgumentError)
-  iex> tl([])
-  ** (ArgumentError)
-  iex> Enum.all?(                 # All
-    [[], [1, 2], [1, 2 | false]], # of these
-    &is_list/1                    # are lists
-  )
-  true
+iex> [1, 2, false]
+[1, 2, false]
+iex> [1 | [2 | 3]] 
+[1, 2 | 3]
 \end{lstlisting}
 
-\subsubsection{Function definitions}
+Functions in Elixir use to be referred by its name and arity. The \verb|hd/1|
+and \verb|tl/1| built-in functions for lists allow to respectively extract the
+first and second components of a cons cell:
 
-Comment what has to do with pattern matching
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> hd([1, 2, false])
+1
+iex> tl([1, 2, false])
+[2, false]
+iex> hd([])
+** (ArgumentError)
+iex> tl([])
+** (ArgumentError)
+\end{lstlisting}
 
-Multiple bodies, name+arity, and recursion
+There is also a function for checking the \verb|list| type membership. Consider
+the following code to apply the \verb|is_list/1| function to several provided 
+lists and return the conjunction of its results:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> Enum.all?(                 # All
+  [[], [1, 2], [1, 2 | false]], # of these
+  &is_list/1                    # are lists
+)
+true
+\end{lstlisting}
+
+Another core collection type in Elixir is the \verb|tuple|, which also does not
+restrict its elements to be of the same type:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> {} # The empty tuple
+{}
+iex> {1, false, {3, 4}, []}
+{1, false, {3, 4}, []}
+\end{lstlisting}
+
+They have a size, which can be retrieved with the \verb|tuple_size/1| function,
+and each \verb|tuple| component can also be retrieved with the \verb|elem/2|
+function by specifying its position with a zero-based index:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> tuple_size({1, 2, 3})
+3
+iex> elem({1, 2, 3}, 0)
+1
+iex> elem({1, 2, 3}, 2)
+3
+iex> elem({1, 2, 3}, 3)
+** (ArgumentError)
+\end{lstlisting}
+
+In this case, the \verb|tuple| type membership checking function is
+\verb|is_tuple/1|.
 
 \subsubsection{Blocks, assignments and control flow}
 
-Comment what has to do with pattern matching
+\textcolor{red}{TODO}
+
+Comment what has to do with pattern matching (where to introduce it?)
+
+\subsubsection{Function definitions}
+
+\textcolor{red}{TODO}
+
+Comment what has to do with pattern matching (where to introduce it?)
+
+Multiple bodies, name+arity, and recursion
 
 \subsection{Macros}
+
+\textcolor{red}{TODO}
 
 Describe, this will be our way to extend Elixir for code verification.
 
 \subsection{Interoperability}
+
+\textcolor{red}{TODO}
 
 Different ways (ports, \gls{nif}s), for the \acrshort{smt} solver integration.
 
@@ -158,17 +220,21 @@ a given logical formula is satisfiable within a specific theory
 is decidable and, moreover, to design efficient algorithms specialized in 
 solving this problem for a theory.
 
-Poner un ejemplo referenciado de una teoría con \gls{smt} decidible y algún 
+\textcolor{red}{TODO}
+
+Para esto último, poner un ejemplo referenciado de una teoría con \gls{smt} decidible y algún 
 algoritmo eficiente.
 
 \subsection{SMT-LIB}
 
 SMT-LIB is an initiative which tries to provide a common interface to interact
-with \acrshort{smt} solvers. It defines an agnostic standard language with a Lisp-like
-syntax to both configure a solver, manage it, encode an \gls{smt} problem 
-instance and query for solutions.
+with \acrshort{smt} solvers. It defines a solver-agnostic standard language
+with a Lisp-like syntax to both configure a solver, manage it, encode an
+\gls{smt} problem instance and query for solutions.
 
 General description (many sorted, citado) and example, show the subset of commands that we are going to use
+
+\textcolor{red}{TODO}
 
 \[
 \begin{array}{rcll}
@@ -183,22 +249,27 @@ General description (many sorted, citado) and example, show the subset of comman
 \end{array}
 \]
 
-Poner un problema sencillo (el mismo de la sección anterior)
+Poner un problema sencillo de ejemplo
 
 \subsection{Z3}
 
-One of the \gls{smt} solvers that implements the SMT-LIB standard is the Z3 theorem
-prover from Microsoft Research.
+One of the \gls{smt} solvers that implements the SMT-LIB standard is the Z3
+theorem prover from Microsoft Research.
+
+\textcolor{red}{TODO}
+
+Poner alguna referencia, enseñar su uso con -i
 
 Decir porque lo hemos elegido y que aun así hemos intentado utilizarlo como 
 interprete SMT-LIB para no depender completamente de el.
 
-Note that there may exist subtle discrepancies when implementing the SMT-LIB 
-standard. For example, while trying to use the \verb|echo| command as a delimiter 
-for the solver responses as suggested in the standard document, we have found that Z3 
-does not include the surrounding double-quotes when it prints back the provided 
-string literal, which is specified in the standard. This behavior may add confusion 
-because the \verb|echo| command is the only one that responds with a string and, in 
-Z3, the \texttt{( echo "sat") } response is exactly the same as the 
-\texttt{( check-sat )} one when it returns \texttt{sat}, so a command response can be 
-confused with the string used to delimit command responses.
+Note that there may exist subtle non-compliances when a solver implements the
+SMT-LIB standard. For example, we have found that Z3 does not include the
+surrounding double-quotes when it prints back the provided string literal,
+which is the specified behavior in the standard.
+
+This may add confusion because the \verb|echo| command is the only one whose
+response is a string literal and, as this is not the case for Z3, there are 
+corner cases in which a command response can be confused with a printed string
+intended to delimit command responses, which is one of the proposed usages for
+\verb|echo| in \cite{smtLibStandard}.

@@ -1,1 +1,2 @@
 {"rule":"TO_DO_HYPHEN","sentence":"^\\QREADME.md LaTeX code formatter Search for TODOs\\E$"}
+{"rule":"POSSESSIVE_APOSTROPHE","sentence":"^\\QThe \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q built-in functions for lists allow to respectively extract the first and second components of a cons cell:\\E$"}
