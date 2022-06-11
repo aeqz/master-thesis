@@ -17,6 +17,8 @@
 %
 % Commands
 %
+\newcommand{\true}{\ensuremath{\mathit{true}}}
+\newcommand{\false}{\ensuremath{\mathit{false}}}
 \newcommand{\Term}{\ensuremath{\mathit{Term}}}
 \newcommand{\skipE}{\ensuremath{\textbf{skip}}}
 \newcommand{\failE}{\ensuremath{\textbf{fail}}}
@@ -24,9 +26,36 @@
 \newcommand{\addE}{\ensuremath{\textbf{add}}}
 \newcommand{\doW}{\ensuremath{\textbf{do}}}
 \newcommand{\elseW}{\ensuremath{\textbf{else}}}
+\newcommand{\andE}[2]{\ensuremath{#1~\textbf{and}~#2}}
+\newcommand{\orE}[2]{\ensuremath{#1~\textbf{or}~#2}}
+\newcommand{\blockE}{\ensuremath{\textbf{block}}}
+\newcommand{\havocE}{\ensuremath{\textbf{havoc}}}
+\newcommand{\assertE}{\ensuremath{\textbf{assert}}}
+\newcommand{\assumeE}{\ensuremath{\textbf{assume}}}
+\newcommand{\unfoldE}{\ensuremath{\textbf{unfold}}}
 \newcommand{\Exp}[1]{\ensuremath{\mathbf{Exp}^{#1}}}
+\newcommand{\Stm}{\ensuremath{\mathbf{Stm}}}
+\newcommand{\Spec}[1]{\ensuremath{\mathit{Spec}(#1)}}
+\newcommand{\Pre}[1]{\ensuremath{\mathit{Pre}(#1)}}
+\newcommand{\Post}[1]{\ensuremath{\mathit{Post}(#1)}}
+\newcommand{\Body}[1]{\ensuremath{\mathit{Body}(#1)}}
+\newcommand{\UserSpec}[1]{\ensuremath{\mathit{UserSpec}(#1)}}
 \newcommand{\whenUnsatW}{\ensuremath{\textbf{when-unsat}}}
 \newcommand{\whenUnsatE}[3]{\whenUnsatW~#1~\doW~#2~\elseW~#3}
 \newcommand{\declareConstE}[1]{\ensuremath{\textbf{declare-const}~#1}}
 \newcommand{\BS}[4]{\ensuremath{\langle #1,~#2,~#3\rangle \Downarrow #4}}
 \newcommand{\unsat}[1]{\ensuremath{\mathit{unsat}~\llbracket#1\rrbracket}}
+\newcommand{\isinteger}[1]{\ensuremath{\mathit{is\mbox{-}integer}(#1)}}
+\newcommand{\integervalue}[1]{\ensuremath{\mathit{integer\mbox{-}value}(#1)}}
+\newcommand{\isboolean}[1]{\ensuremath{\mathit{is\mbox{-}boolean}(#1)}}
+\newcommand{\booleanvalue}[1]{\ensuremath{\mathit{boolean\mbox{-}value}(#1)}}
+\newcommand{\tauvalue}[1]{\ensuremath{\mathit{\tau\mbox{-}value}(#1)}}
+\newcommand{\taulit}[1]{\ensuremath{\mathit{\tau\mbox{-}lit}(#1)}}
+\newcommand{\islist}[1]{\ensuremath{\mathit{is\mbox{-}list}(#1)}}
+\newcommand{\isnelist}[1]{\ensuremath{\mathit{is\mbox{-}nonempty\mbox{-}list}(#1)}}
+\newcommand{\istuple}[1]{\ensuremath{\mathit{is\mbox{-}tuple}(#1)}}
+\newcommand{\istau}[1]{\ensuremath{\mathit{is\mbox{-}\tau}(#1)}}
+\newcommand{\trExp}[2]{\ensuremath{\mathit{trExp}~#1~\llbracket#2\rrbracket}}
+\newcommand{\trExps}[1]{\ensuremath{\mathit{trExp}~\llbracket#1\rrbracket}}
+\newcommand{\trStm}[1]{\ensuremath{\mathit{trStm}~\llbracket#1\rrbracket}}
+\newcommand{\termSize}[1]{\ensuremath{\mathit{term\mbox{-}size}(#1)}}

@@ -7,7 +7,37 @@
 
 \section{Syntax}
 
-\textcolor{red}{TODO}
+We denote by $\Sigma^{1} = \{ \texttt{===}, \texttt{<=}, \texttt{>=}, 
+\texttt{+}, \texttt{-}, \dots \}$ the set of operators and functions allowed 
+in L1. We assume that for every element $f \in \Sigma^{1}$ there is an 
+uninterpreted function symbol in $\Sigma^{0}$, which will be denoted by 
+$\widehat{f}$. If $f$ has arity $n$, its corresponding function symbol 
+$\widehat{f}$ will have sort $\Term \times \stackrel{n}{\dots} 
+\times \Term \rightarrow \Term$.
+
+Let us define the syntax of L1 expressions and statements:
+
+\[
+\begin{array}{rcll}
+\Exp{1} \ni e & ::= & c & \{ \textrm{literal} \}\\
+& | & x & \{ \textrm{variable} \}\\
+& | & \andE{e_1}{e_2} & \{ \textrm{conjunction} \}\\
+& | & \orE{e_1}{e_2} & \{ \textrm{disjunction} \}\\
+& | & [] & \{ \textrm{empty list} \}\\
+& | & [e_1~|~e_2] & \{ \textrm{list constructor} \}\\
+& | & \{e_1, \ldots, e_n\} & \{ \textrm{tuple} \}\\
+& | & f(e_1, \ldots, e_n) & \{ \textrm{function or operator application} \}\\
+
+\\
+\Stm \ni S & ::= & \skipE\\
+ & | & \blockE~S\\
+ & | & \havocE~x\\
+ & | & S_1;S_2\\
+ & | & \assumeE~e\\
+ & | & \assertE~e\\
+ & | & \unfoldE~f(e_1, \dots, e_n)\\
+\end{array}
+\]
 
 \section{Semantics}
 
@@ -19,6 +49,47 @@
 
 Required SMT-LIB preamble for the translation.
 
+During the translation of L1 expressions we require some 
+defined sorts, constants and functions. In our implementation,
+the SMT-LIB commands with that purpose are the following:
+
+\begin{verbatim}
+(declare-sort Term 0)
+(declare-sort Type 0)
+(declare-fun type (Term) Type)
+(declare-fun term_size (Term) Int)
+(declare-fun integer_val (Term) Int)
+(declare-fun boolean_val (Term) Bool)
+(declare-fun integer_lit (Int) Term)
+(declare-fun boolean_lit (Bool) Term)
+(declare-fun tuple_size (Term) Int)
+(declare-fun elem (Term Int) Term)
+(declare-fun nil () Term)
+(declare-fun cons (Term Term) Term)
+(declare-fun hd (Term) Term)
+(declare-fun tl (Term) Term)
+(declare-const int Type)
+(declare-const bool Type)
+(declare-const tuple Type)
+(declare-const nonempty_list Type)
+(assert (distinct int bool))
+(assert (distinct int tuple))
+(assert (distinct int nonempty_list))
+(assert (distinct bool tuple))
+(assert (distinct bool nonempty_list))
+(assert (distinct tuple nonempty_list))
+(define-fun is_integer ((x Term)) Bool (= (type x) int))
+(define-fun is_boolean ((x Term)) Bool (= (type x) bool))
+(define-fun is_tuple ((x Term)) Bool (= (type x) tuple))
+(define-fun is_nonempty_list ((x Term)) Bool (= (type x) nonempty_list))
+(define-fun is_list ((x Term)) Bool (or (= x nil) (= (type x) nonempty_list)))
+\end{verbatim}
+
+Also, tuple constructors for any size $n$ must be declared with sort 
+$\Term \times \stackrel{n}{\dots} 
+\times \Term \rightarrow \Term$, but 
+in our implementation we declare each one the first time that it is required.
+
 \subsection{Built-in specifications}
 
 \textcolor{red}{TODO}
@@ -26,17 +97,466 @@ Required SMT-LIB preamble for the translation.
 Built-in specifications and SMT-LIB code to emulate the 
 Elixir semantics.
 
+We shall also assume that for every function symbol $f \in \Sigma^{1}$ of 
+arity $n$ there is an overloaded specification expressed in terms of L0 
+formulae. Here the word \emph{overloaded} means that there could by many 
+pre/post-condition pairs for each function. For example, equality can be 
+specified as follows:
+
+\[
+\begin{array}{l}
+\{ \isinteger{x} \wedge \isinteger{y} \}\\
+x~\texttt{===}~y\\
+\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow \integervalue{x} = \integervalue{y} \}\\
+\\
+\{ \isboolean{x} \wedge \isboolean{y} \}\\
+x~\texttt{===}~y\\
+\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow \booleanvalue{x} = \booleanvalue{y} \}\\
+\\
+\vdots
+\\
+\\
+\{\true\}\\
+x~\texttt{===}~y\\
+\{ \isboolean{\widehat{===}(x, y)} \wedge \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow (x = y) \}\\
+\\
+\end{array}
+\]
+
+Here $\widehat{===}$ is the uninterpreted symbol in $\Sigma^{0}$ corresponding 
+to Elixir's strict equality operator $\texttt{===} \in \Sigma^{1}$. We write 
+the former in prefix form in order to highlight the fact that it is an 
+uninterpreted function symbol in the logic. On the contrary, the $=$, 
+$\Leftrightarrow$, $\wedge$ in the specification above are actual connectives 
+and operators of the underlying logic.
+
+These specifications are built-in into the system. They are not provided by 
+the user. If we apply an operator 
+that has several pre/postcondition pairs, we check all the preconditions and 
+only assume those postconditions corresponding to the preconditions that hold.
+
+Therefore, each function $f \in \Sigma^{1}$ of arity $n$ may have several 
+specifications $\sigma_1, \ldots, \sigma_m$. Each specification is a pair 
+$(\varphi(x_1, \ldots, x_n), \psi(x_1, \ldots, x_n))$, where the $x_i$ 
+variables denote the parameters of the function. We denote by $\Spec{f}$ 
+the set of specifications of $f$.
+
+In order to allow L1 expressions to model the semantics of Elixir, the 
+corresponding uninterpreted functions must be declared in SMT-LIB
+with sort $\Term \times \stackrel{n}{\dots} 
+\times \Term \rightarrow \Term$. We provide 
+some built-in specifications which are explained in this section.
+
+For integer arithmethic, the specification of $\texttt{+}$ can be as
+
+\[
+\begin{array}{l}
+\{ \isinteger{x} \wedge \isinteger{y} \}\\
+x~\texttt{+}~y\\
+\{ \isinteger{\widehat{+}(x, y)} \wedge 
+  \integervalue{\widehat{+}(x, y)} = \integervalue{x} + \integervalue{y} \}
+\end{array}
+\]
+
+and similar for $\texttt{-}$ and $\texttt{*}$. The unary 
+version of $\texttt{-}$ can be specified as follows:
+
+\[
+\begin{array}{l}
+\{ \isinteger{x} \}\\
+\texttt{-}~x\\
+\{ \isinteger{\widehat{-}(x)} \wedge 
+  \integervalue{\widehat{-}(x)} = -\integervalue{x} \}
+\end{array}
+\]
+
+It is similar to the Elixir boolean negation:
+
+\[
+\begin{array}{l}
+\{ \isboolean{x} \}\\
+\mathit{not}(x)\\
+\{ \isboolean{\widehat{\mathit{not}}(x)} \wedge 
+  \booleanvalue{\widehat{\mathit{not}}(x)} \Leftrightarrow \neg\booleanvalue{x} \}
+\end{array}
+\]
+
+We have only provided the comparison for integer terms as
+
+\[
+\begin{array}{l}
+\{ \isinteger{x} \wedge \isinteger{y} \}\\
+x~\texttt{<}~y\\
+\{ \isboolean{\widehat{<}(x, y)} \wedge 
+  \booleanvalue{\widehat{<}(x, y)} \Leftrightarrow \integervalue{x} < \integervalue{y} \}
+\end{array}
+\]
+
+and it is similar for $\texttt{>}$, $\texttt{<=}$ and $\texttt{>=}$. An improvement would
+be to extend this for any term, including lists and tuples. Term equality 
+can be specified as
+
+\[
+\begin{array}{l}
+\{ \isinteger{x} \wedge \isinteger{y} \}\\
+x~\texttt{===}~y\\
+\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow \integervalue{x} = \integervalue{y} \}\\
+\\
+\{ \isboolean{x} \wedge \isboolean{y} \}\\
+x~\texttt{===}~y\\
+\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow \booleanvalue{x} = \booleanvalue{y} \}\\
+\\
+\{ \islist{x} \wedge \islist{y} \}\\
+x~\texttt{===}~y\\
+\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow 
+  (x = \mathit{nil} \wedge y = \mathit{nil})
+  \vee (\mathit{hd}(x) = \mathit{hd}(y) \land \mathit{tl}(x) = \mathit{tl}(y)) \}\\
+\\
+\{ \istuple{x} \wedge \istuple{y} \wedge \mathit{tuple\mbox{-}size}(x) = \mathit{tuple\mbox{-}size}(y) \}\\
+x~\texttt{===}~y\\
+\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow 
+  (\forall i. i >= 0 \wedge i < \mathit{tuple\mbox{-}size}(x) \Rightarrow \mathit{elem}(x, i) = \mathit{elem}(y, i)) \}\\
+\\
+\{ \istuple{x} \wedge \istuple{y} \wedge \mathit{tuple\mbox{-}size}(x) \neq \mathit{tuple\mbox{-}size}(y) \}\\
+x~\texttt{===}~y\\
+\{ \neg\booleanvalue{\widehat{===}(x, y)} \}\\
+\\
+\{\true\}\\
+x~\texttt{===}~y\\
+\{ \isboolean{\widehat{===}(x, y)} \wedge \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow (x = y) \}\\
+\\
+\end{array}
+\]
+
+and it is also similar for $\texttt{!==}$.
+
+The $\mathit{tuple\mbox{-}size}$ and $\mathit{elem}$ functions can be specified directly 
+in terms of the built-in declarations used during the translation:
+
+\[
+\begin{array}{l}
+\{ \istuple{x} \}\\
+\mathit{tuple\mbox{-}size}(x)\\
+\{ \isinteger{\widehat{\mathit{tuple\mbox{-}size}}(x)} \wedge 
+  \integervalue{\widehat{\mathit{tuple\mbox{-}size}}(x)} = \mathit{tuple\mbox{-}size}(x) \}
+\end{array}
+\]
+
+\[
+\begin{array}{l}
+\{ \istuple{x} \wedge \isinteger{i} \wedge \integervalue{i} >= 0 \wedge \integervalue{i} < \mathit{tuple\mbox{-}size}(x) \}\\
+\mathit{elem}(x, i)\\
+\{ \widehat{\mathit{elem}}(x, i) = \mathit{elem}(x, \integervalue{i}) \}
+\end{array}
+\]
+
+The same can be applied to the $\mathit{hd}$ function
+
+\[
+\begin{array}{l}
+\{ \isnelist{x} \}\\
+\mathit{hd}(x)\\
+\{ \widehat{\mathit{hd}}(x) = \mathit{hd}(x) \}
+\end{array}
+\]
+
+and it is similar for $\mathit{tl}$. Note that, in these last examples, 
+the L1 function is not the same as the one mentioned in the postcondition,
+which is a built-in L0 function although we have used the same name.
+
+The functions to mention the term types can also be specified 
+directly with the built-in declared L0 functions:
+
+\[
+\begin{array}{l}
+\{ \true \}\\
+\isinteger{x}\\
+\{ \isboolean{\widehat{\isinteger{x}}} \wedge 
+  \booleanvalue{\widehat{\isinteger{x}}} \Leftrightarrow \isinteger{x} \}
+\end{array}
+\]
+
+and it is similar for the remaining types.
+
 \subsection{Translation into L0}
 
 \textcolor{red}{TODO}
 
-The translation into L0
+We shall define two functions:
+
+\[
+\begin{array}{ll}
+\trExp{\_}{\_} : & \Exp{0} \times \Exp{1} \rightarrow \Exp{0} \times \mathbb{T}\\
+\trStm{\_} : & \Stm \rightarrow \Exp{0}
+\end{array}
+\]
+
+Given an L1 expression $e$, the application $\trExp{\gamma}{e}$ returns a tuple 
+$(\epsilon, t)$, in which $\epsilon$ is an L0 expression that models the
+semantics of $e$, and $t$ is the term in the underlying logic that will 
+be used to refer to the result of $e$. The $\gamma$ models those facts that are 
+known by the time $e$ is evaluated. This is needed to handle the short circuit-based 
+semantics of $\mathbf{and}$ and $\mathbf{or}$. We are going to omit this $\gamma$
+parameter when it models no knowledge:
+
+\[
+\trExps{e} \equiv \trExp{\skipE}{e}
+\]
+
+Let us define $\trExp{\_}{\_}$ case by case. In the case of literals, we get:
+
+\[
+\trExp{\_}{c} \equiv (\addE~\istau{\taulit{\hat{c}}};\addE~\tauvalue{\taulit{\hat{c}}} = \hat{c}, \taulit{\hat{c}})
+\]
+
+where $\tau$ is the type of the literal, which can be determined at compile time
+since it is a literal, and $\hat{c}$ is the constant in the underlying logic represented 
+by that literal. For example, the Elixir term $\mathbf{2}$ corresponds to the 
+actual number $2 \in \mathbb{Z}$, so $\hat{\mathbf{2}} = 2$.
+
+In the case of variables, we get:
+
+\[
+\trExp{\_}{x} \equiv (\skipE, \hat{x})
+\]
+
+It returns the logic variable $\hat{x}$ corresponding to the L1 variable $x$. 
+No L0 expression is generated.
+
+The L0 expressions generated by a tuple correspond to the ones generated by each 
+component, the projection function for each one and its tuple size function. Its 
+translated term is a specific tuple constructor for its size $n$ applied to its 
+translated term components:
+
+\[
+\begin{array}{l}
+\trExp{\gamma}{\{e_1, \ldots, e_n\}} \equiv (\epsilon_1; \dots; \epsilon_n;\epsilon;\epsilon'_1; \dots; \epsilon'_n, t)\\
+\qquad \textbf{where } \forall i \in \{1..n\}. (\epsilon_i, t_i) = \trExp{\gamma}{e_i}\\
+\qquad \phantom{\textbf{where }} t = \mathit{n\mbox{-}tuple}(t_1, \ldots, t_n)\\
+\qquad \phantom{\textbf{where }} \epsilon = \addE~\istuple{t};\addE~\mathit{tuple\mbox{-}size}(t) = n\\
+\qquad \phantom{\textbf{where }} \forall i \in \{1..n\}. \epsilon'_i = \addE~\mathit{elem}(t, i) = t_i\\
+\end{array}
+\]
+
+The translation for lists is defined recursively, with the empty list 
+as the base case. The generated L0 expressions set the corresponding heads and tails 
+for the generated list terms, and it does not require the second
+argument for the list constructor to be a list:
+
+\[
+\begin{array}{l}
+\trExp{\_}{[]} \equiv (
+  \skipE, \mathit{nil}
+)\\
+\trExp{\gamma}{[e_1~|~e_2]} \equiv (\epsilon_1;\epsilon_2;\epsilon, t)\\
+  \qquad \textbf{where } (\epsilon_1, t_1) = \trExp{\gamma}{e_1}\\ 
+  \qquad \phantom{\textbf{where }} (\epsilon_2, t_2) = \trExp{\gamma}{e_2}\\ 
+  \qquad \phantom{\textbf{where }} t = \mathit{cons}(t_1, t_2)\\ 
+  \qquad \phantom{\textbf{where }} \epsilon = \left[
+    \begin{array}{l}
+      \addE~\isnelist{t};\\
+      \addE~\mathit{hd}(t) = t_1;\\
+      \addE~\mathit{tl}(t) = t_2\\
+    \end{array}
+  \right]
+\end{array}
+\]
+
+The most complex case is that of function application:
+
+\[
+\begin{array}{l}
+\trExp{\gamma}{f(e_1, \ldots, e_n)} \equiv (\epsilon_1; \dots; \epsilon_n; \epsilon; \overline{\epsilon_\sigma}^{\sigma \in \Spec{f}}, \widehat{f}(t_1, \ldots, t_n))\\
+\qquad \textbf{where } \forall i \in \{1..n\}. (\epsilon_i, t_i) = \trExp{\gamma}{e_i}\\
+\qquad \phantom{\textbf{where }} \epsilon = \left[ 
+  \begin{array}{l}
+  \whenUnsatW~\gamma;\addE~\neg \bigvee_{\sigma \in \Spec{f}}\Pre{\sigma}(t_1\ldots,t_n)\\
+  \quad\doW~\skipE\\
+  \quad\elseW~\failE\\
+  \end{array}
+  \right]\\
+\qquad \phantom{\textbf{where }} \forall \sigma \in \Spec{f} \textrm{ such that } \sigma = (\varphi_\sigma(x_1\ldots,x_n), \psi_\sigma(x_1, \ldots, x_n)).\\
+\qquad\qquad\qquad\qquad \epsilon_\sigma = \left[ 
+\begin{array}{l}
+\whenUnsatW~\gamma;\addE~\neg \varphi_\sigma(t_1\ldots,t_n)~\doW\\
+\quad\addE~\varphi_\sigma(t_1\ldots,t_n);\\
+\quad\addE~\psi_\sigma(t_1,\ldots,t_n)\\
+\elseW~\skipE\\
+\end{array}
+\right] \\
+\end{array}
+\]
+
+Firstly, we generate the L0 expression $\epsilon_i$ corresponding to each 
+argument $e_i$, and its corresponding uninterpreted term $t_i$. Then, for 
+each pre/post-condition pair of the specification of the function being
+applied, we generate code that checks whether the precondition holds and, 
+in case it does, we assert both the precondition and postcondition. Finally,
+we also check and fail if none of the preconditions hold.
+
+We distinguish the cases of logical connectives from function application
+because of their specific short-circuit semantics in Elixir:
+
+\[
+\begin{array}{l}
+\trExp{\gamma}{\andE{e_1}{e_2}} \equiv (\epsilon, t)\\
+\qquad \textbf{where }(\epsilon_1, t_1) = \trExp{\gamma}{e_1}\\
+\qquad \phantom{\textbf{where }}(\epsilon_2, t_2) = \trExp{\gamma'}{e_2}\\
+\qquad\qquad\qquad\qquad \gamma' = \gamma;\addE~\booleanvalue{t_1}\\
+\qquad\qquad\qquad\qquad t = \widehat{\mathbf{and}}(t_1, t_2)\\
+\qquad\qquad\qquad\qquad \epsilon = \left[ 
+\begin{array}{l}
+\epsilon_1;\\
+\whenUnsatW~\gamma;\addE~\neg\isboolean{t_1}~\doW\\
+\quad\whenUnsatW~\gamma;\addE~\booleanvalue{t_1}~\doW\\
+\quad\quad\addE~t = \false\\
+\quad\elseW\\
+\quad\quad\epsilon_2;\\
+\quad\quad\whenUnsatW~\gamma;\addE~\neg\booleanvalue{t_1}~\doW\\
+\quad\quad\quad\addE~t = t_2\\
+\quad\quad\elseW~\whenUnsatW~\gamma';\addE~\neg\isboolean{t_2}~\doW\\
+\quad\quad\quad\addE~\isboolean{t};\\
+\quad\quad\quad\addE~\booleanvalue{t} = \booleanvalue{t_1} \\
+\quad\phantom{\quad\quad\addE~\booleanvalue{t}} \land \booleanvalue{t_2}\\
+\quad\quad\elseW~\failE\\
+\elseW~\failE
+\end{array}
+\right] \\
+\end{array}
+\]
+
+In the translation for an $\mathbf{and}$ expression, we firstly check if 
+the term to the left is a boolean. Then, on the one hand, if it is known to be always 
+$\false$, the resulting term is $\false$. On the other hand, if it 
+is known to be always $\true$, the resulting term is the right one 
+regardless of its type. Note that this right term has been translated with the 
+knowledge that the left one is $\true$. If the value of the 
+left term is not exactly known at this point, we check if the right term 
+is a boolean, again with the knowledge that the left one is $\true$,
+and translate the whole expression into the underlying logical conjunction.
+
+The translation corresponding to $\mathbf{or}$ is analogous:
+
+\[
+\begin{array}{l}
+\trExp{\gamma}{\orE{e_1}{e_2}} \equiv (\epsilon, t)\\
+\qquad \textbf{where }(\epsilon_1, t_1) = \trExp{\gamma}{e_1}\\
+\qquad \phantom{\textbf{where }}(\epsilon_2, t_2) = \trExp{\gamma'}{e_2}\\
+\qquad\qquad\qquad\qquad \gamma' = \gamma;\addE~\neg\booleanvalue{t_1}\\
+\qquad\qquad\qquad\qquad t = \widehat{\mathbf{or}}(t_1, t_2)\\
+\qquad\qquad\qquad\qquad \epsilon = \left[ 
+\begin{array}{l}
+\epsilon_1;\\
+\whenUnsatW~\gamma;\addE~\neg\isboolean{t_1}~\doW\\
+\quad\whenUnsatW~\gamma;\addE~\neg\booleanvalue{t_1}~\doW\\
+\quad\quad\addE~t = \true\\
+\quad\elseW\\
+\quad\quad\epsilon_2;\\
+\quad\quad\whenUnsatW~\gamma;\addE~\booleanvalue{t_1}~\doW\\
+\quad\quad\quad\addE~t = t_2\\
+\quad\quad\elseW~\whenUnsatW~\gamma';\addE~\neg\isboolean{t_2}~\doW\\
+\quad\quad\quad\addE~\isboolean{t};\\
+\quad\quad\quad\addE~\booleanvalue{t} = \booleanvalue{t_1} \\
+\quad\phantom{\quad\quad\addE~\booleanvalue{t}} \lor \booleanvalue{t_2}\\
+\quad\quad\elseW~\failE\\
+\elseW~\failE
+\end{array}
+\right] \\
+\end{array}
+\]
+
+Now we move on to L1 statements. The following ones are translated in a 
+quite straightforward way:
+
+\[
+\begin{array}{l}
+\trStm{\skipE} \equiv \skipE\\[1em]
+\trStm{\blockE~S} \equiv \localE~\trStm{S}\\[1em]
+\trStm{\havocE~x} \equiv \declareConstE{\widehat{x}}\\[1em]
+\trStm{S_1;S_2} \equiv \trStm{S_1};\trStm{S_2}\\
+\qquad \textbf{where }(\epsilon_1, t_1) = \trExps{e_1}\\
+\qquad \phantom{\textbf{where }}(\epsilon_2, t_2) = \trExps{e_2}
+\end{array}
+\]
+
+In the case of $\assumeE$, we generate the expression $\epsilon$ that 
+corresponds to the expression being assumed and its uninterpreted term $t$. 
+We ensure that the term $t$ actually denotes a boolean value and, in this 
+case, we assert that this boolean value is $\true$:
+
+\[
+\trStm{\assumeE~e} \equiv 
+\left[\begin{array}{l}
+\epsilon;\\
+\whenUnsatW~\addE~\neg\isboolean{t}\\
+\quad\doW~\addE~\booleanvalue{t}\\
+\quad\elseW~\failE\\
+\end{array}\right]
+\qquad \textbf{where}~(\epsilon, t) = \trExps{e}
+\]
+
+In the case of $\assertE$, we also generate the expression $\epsilon$ that 
+corresponds to the expression being assumed and its uninterpreted term $t$. 
+We ensure that the term $t$ actually denotes a boolean value and also that 
+its boolean value is $\true$:
+\[
+\trStm{\assertE~e} \equiv
+\left[\begin{array}{l}
+\epsilon;\\
+\whenUnsatW~\addE~\neg\isboolean{t}\\
+\quad\doW~\skipE\\
+\quad\elseW~\failE;\\
+\whenUnsatW~\addE~\neg\booleanvalue{t}\\
+\quad\doW~\addE~\booleanvalue{t}\\
+\quad\elseW~\failE\\
+\end{array}\right]
+\qquad \textbf{where}~(\epsilon, t) = \trExps{e}
+\]
+
+Finally, the $\unfoldE$ statement relies on having an user-provided definition
+for the involved function body as a parameterized L1 expression, and also 
+user-provided pre/post-condition pair specifications in terms of L1 expressions:
+
+\[
+\begin{array}{l}
+\trStm{\unfoldE~f(e_1, \dots, e_n)} \equiv \epsilon;\overline{\epsilon_\sigma}^{\sigma \in \UserSpec{f}}\\
+\qquad \textbf{where } \epsilon = \trStm{\assumeE~f(e_1, \dots, e_n)~\texttt{===}~\Body{f}(e_1, \dots, e_n)}\\
+\qquad \phantom{\textbf{where }} \forall \sigma \in \UserSpec{f} \textrm{ such that } \sigma = (p_\sigma(e_1\ldots,e_n), q_\sigma(e_1, \ldots, e_n)).\\
+\qquad\qquad\qquad\qquad (\epsilon_p, t_p) = \trExps{p_\sigma(e_1\ldots,e_n)}\\
+\qquad\qquad\qquad\qquad \epsilon_\sigma = \left[ 
+\begin{array}{l}
+\epsilon_p;\\
+\whenUnsatW~\addE~\neg\isboolean{t_p}~\doW\\
+\quad\whenUnsatW~\addE~\neg\booleanvalue{t_p}~\doW\\
+\quad\quad\trStm{\assumeE~p_\sigma(e_1\ldots,e_n)};\\
+\quad\quad\trStm{\assumeE~q_\sigma(e_1\ldots,e_n)}\\
+\quad\elseW~\skipE\\
+\elseW~\skipE
+\end{array}
+\right] \\
+\end{array}
+\]
 
 \subsection{Term size modelling}
 
 \textcolor{red}{TODO}
 
 Intended to be used for reasoning about termination.
+
+We also provide the following axioms in order to reason about
+term sizes:
+
+\[
+\begin{array}{l}
+\termSize{\mathit{nil}} = 1\\
+\forall x. \isinteger{x} \Rightarrow \termSize{x} = 1\\
+\forall x. \isboolean{x} \Rightarrow \termSize{x} = 1\\
+\forall x. \isnelist{x} \Rightarrow \termSize{x} = 1 + \termSize{\mathit{hd}(x)} + \termSize{\mathit{tl}(x)}\\
+\forall x. \istuple{x} \Rightarrow \forall i. i >= 0 \wedge i < \mathit{tuple\mbox{-}size}(x) \Rightarrow \termSize{\mathit{elem}(x, i)} < \termSize{x}\\
+\end{array}
+\]
+
+They are based on the types and will be useful for reasoning about termination.
 
 \section{Implementation}
 
