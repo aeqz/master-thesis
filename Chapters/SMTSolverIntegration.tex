@@ -1,24 +1,127 @@
 \chapter{SMT Solver Integration in Elixir}
 \label{cap:smtSolverIntegration}
 
-\textcolor{red}{TODO}
+In order to implement our system, we will require to be able to interact with
+an \acrshort{smt} solver from Elixir. We have decided to use the Z3 theorem
+prover, which implements SMT-LIB, and to communicate with it precisely by using
+this standard.
+
+Then, we will introduce a simple formal language whose semantics are defined
+in terms of the \gls{smt} problem, and an example of its implementation in 
+Elixir as a result of the previous integration with a solver.
 
 \section{SMT-LIB interpreter bindings}
 
-\textcolor{red}{TODO}
+Initially, we found an Elixir package that provides integration with Z3 and is
+implemented using ports, but it seemed to be not so mature and maintained. It 
+was also not published in Hex, the Elixir package manager, and we had no
+guarantees about if it would lack some functionality that we would require at
+some point.
 
-Explain why we have developed this in the way that we have done it.
+To implement our own SMT-LIB interpreter binding was an opportunity to get
+started with Elixir in practice, and also with its macro system. This has 
+given place to a side project which consists of an Elixir \gls{dsl} to
+communicate with SMT-LIB interpreters, which may be at short term useful to
+the Elixir community.
 
-Mention relevant facts of the development process and implementation details.
+\subsection{Elixir SmtLib example}
 
 Present the resulting tool, the \gls{dsl} and an example.
 
+\subsection{SmtLib implementation}
+
+Although Elixir is dynamically typed, it has a system to annotate the intended
+types for functions and a tool to perform a static analysis on them. We will
+use these specifications together with function identifiers to outline the ideas
+behind our implementation.
+
+First, we define a \verb|type| to represent an SMT-LIB command from the subset
+that we have exposed in \ref{prelim:smtlib}:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@type command_t ::
+  {:assert, term_t}
+  | :check_sat
+  | {:push, numeral_t}
+  | {:pop, numeral_t}
+  | {:declare_const, symbol_t, sort_t}
+  | {:declare_sort, symbol_t, numeral_t}
+  | {:declare_fun, symbol_t, [sort_t], sort_t}
+\end{lstlisting}
+
+where other involved types like \verb|numeral_t| and \verb|sort_t| are defined 
+similarly.
+
+Then, we implement a function \verb|commands/1| that, given a subset of the 
+Elixir AST (i.e. our \gls{dsl}), transforms it into a list of SMT-LIB commands:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@spec commands(ast) :: [command_t]
+\end{lstlisting}
+  
+The implementation defines cases for each possible term and its possible
+subterms, like the following:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@spec command(ast) :: command_t
+def command({:declare_const, _, [{v, s}]}) do
+  {:declare_const, symbol(v), sort(s)}
+end
+\end{lstlisting}
+
+\textcolor{red}{TODO} explain the DSL and think about split this into subsections
+distinguish from function names by modules
+
+Once we are able to transform the \gls{dsl} into SMT-LIB commands, we require 
+a function to render each command into a \verb|string| that an SMT-LIB
+interpreter understands:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@spec command(command_t) :: String.t
+\end{lstlisting}
+
+It handles compositionally the \verb|command_t| type with cases like the
+following:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+{:declare_const, s1, s2} ->
+  "(declare-const #{symbol(s1)} #{sort(s2)})"
+\end{lstlisting}
+
+Communication with ports, implementation for Z3 but it can be other
+
+Finally, in order to understand the solver responses, we have also implemented
+a failable function that parses the received \verb|string|:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@spec general_response(String.t()) :: 
+  {:ok, general_response_t} 
+  | {:error, term}
+\end{lstlisting}
+
+It has been implemented using \verb|nimble|, an Elixir package of parser
+combinators, in order to delegate this task and get the reliability of a well
+tested tool [referencia]. Its top level parser definition is as follows:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+defparsec :general_response,
+  skip_blanks_and_comments()
+  |> choice([
+    token(success()) |> eos(),
+    token(unsupported()) |> eos(),
+    token(error()) |> eos(),
+    token(specific_success_response()) |> eos()
+  ])
+\end{lstlisting}
+
 \section{The L0 language}
 
-Show the formalization of L0, a simple language in top of where 
-the \gls{ir} is defined.
+This section exposes a formal language that we have called L0 and will
+represent the lowest level of our verification system.
 
-Present also an implementation draft in terms of our \gls{dsl}.
+It is intended to be implemented as Elixir expressions that send SMT-LIB 
+statements to an \acrshort{smt} solver and will allow us to define a
+verification \gls{ir} on top of it.
 
 \subsection{Notation}
 
@@ -26,22 +129,19 @@ We assume that $\mathbb{F}$ is the set of many-sorted logic formulae involving
 equality, uninterpreted function symbols and arithmetic. We use $\varphi$, 
 $\psi$, etc. to denote elements from this set.
 
-We assume a set $\Sigma^{0}$ of uninterpreted function symbols.
-
-We assume a set $\mathbb{T}$ of terms in many-sorted logic, generated by the 
-following grammar:
+Also, we assume a set $\Sigma^{0}$ of uninterpreted function symbols and a set
+$\mathbb{T}$ of terms in many-sorted logic, generated by the following grammar:
 
 \[
 \mathbb{T} \ni t ::= n \mid x \mid f(t_1, \ldots, t_m)
 \]
 
-where $n$ is a number, $x$ is a variable, and $f \in \Sigma^0$ is a function 
+where $n$ is a number, $x$ is a variable, and $f \in \Sigma^{0}$ is a function 
 symbol of arity $m$.
 
 \subsection{Syntax}
 
-We assume the following syntax for the lowest level language, which corresponds
-to Elixir expressions that send SMT-LIB statements to the solver:
+The syntax of L0 expressions is given by the following grammar:
 
 \[
 \begin{array}{rcll}
@@ -51,12 +151,9 @@ to Elixir expressions that send SMT-LIB statements to the solver:
 & | & \localE~\epsilon & \{ \textrm{local scoped proof state} \}\\
 & | & \addE~\varphi &  \{ \textrm{add a logic formula $\varphi \in \mathbb{F}$ to the state} \}\\
 & | & \declareConstE{x} &  \{ \textrm{declare constant of type $\Term$} \}\\
-& | & \whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3} &  \{ \textrm{unsatisfiability test} \}\\
+& | & \whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3} &  \{ \textrm{unsatisfiability conditional} \}\\
 \end{array}
 \]
-
-where $\varphi \in \mathbb{F}$ denotes a formula of arithmetic logic with 
-equality and uninterpreted function symbols. 
 
 If $I = [i_1, \ldots, i_n]$ is a sequence of elements, we use the notation
 $\overline{\epsilon_i}^{i \in I}$ to denote the sequential composition 
@@ -130,89 +227,83 @@ rules:
 
 \bigskip
 
-The absence of rules for the $\failE$ expression is intentional, because we want 
-any reachable $\failE$ to prevent the whole expression for evaluating. This also happens
-if the same variable is declared twice or if a formula with undeclared
-variables is being added.
+The absence of rules for the $\failE$ expression is intentional, because we
+want any reachable $\failE$ to prevent the whole expression for evaluating.
+We have also required this to happen if the same variable is declared twice
+or if a formula with undeclared variables is being added.
 
 \subsection{Implementation}
 
 \textcolor{red}{TODO}
 
-Simple implementation using the SMT-LIB bindings for Elixir.
+Simple implementation using the SMT-LIB bindings for Elixir. Show a simple example.
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-defmodule L0 do
-  import SmtLib
+defmacro eval(_, {:skip, _, _}) do
+  quote do
+    nil
+  end
+end
 
-  defmacro init(conn) do
-    quote do
-      run(unquote(conn)) do
-        declare_sort Term
-      end
+defmacro eval(_, {:fail, _, _}) do
+  quote do
+    raise "Verification failed"
+  end
+end
+
+defmacro eval(conn, {:seq, _, [e1, e2]}) do
+  quote do
+    conn = unquote(conn)
+    eval(conn, unquote(e1))
+    eval(conn, unquote(e2))
+  end
+end
+
+defmacro eval(conn, {:local, _, [e]}) do
+  quote do
+    conn = unquote(conn)
+    {_, :ok} = run(conn, push)
+    eval(conn, unquote(e))
+    {_, :ok} = run(conn, pop)
+  end
+end
+
+defmacro eval(conn, {:add, _, [f]}) do
+  quote do
+    conn = unquote(conn)
+    {_, :ok} = run(conn, assert(unquote(f)))
+  end
+end
+
+defmacro eval(conn, {:declare_const, _, [x]}) do
+  quote do
+    conn = unquote(conn)
+    {_, :ok} = run(
+      conn, 
+      declare_const([{unquote(x), Term}])
+    )
+  end
+end
+
+defmacro eval(
+  conn, 
+  {:when_unsat, _, [e1, [do: e2, else: e3]]}) 
+do
+  quote do
+    conn = unquote(conn)
+    {_, :ok} = run(conn, push)
+    eval(conn, unquote(e1))
+    {_, {:ok, result}} = run(conn, check_sat)
+    {_, :ok} = run(conn, pop)
+
+    case result do
+      :unsat -> eval(conn, unquote(e2))
+      _ -> eval(conn, unquote(e3))
     end
   end
+end
 
-  defmacro eval(_, {:skip, _, _}) do
-    quote do
-      nil
-    end
-  end
-
-  defmacro eval(_, {:fail, _, _}) do
-    quote do
-      raise "Verification failed"
-    end
-  end
-
-  defmacro eval(conn, {:seq, _, [e1, e2]}) do
-    quote do
-      conn = unquote(conn)
-      eval(conn, unquote(e1))
-      eval(conn, unquote(e2))
-    end
-  end
-
-  defmacro eval(conn, {:local, _, [e]}) do
-    quote do
-      conn = unquote(conn)
-      {_, :ok} = run(conn, push)
-      eval(conn, unquote(e))
-      {_, :ok} = run(conn, pop)
-    end
-  end
-
-  defmacro eval(conn, {:add, _, [f]}) do
-    quote do
-      conn = unquote(conn)
-      {_, :ok} = run(conn, assert(unquote(f)))
-    end
-  end
-
-  defmacro eval(conn, {:declare_const, _, [x]}) do
-    quote do
-      conn = unquote(conn)
-      {_, :ok} = run(conn, declare_const([{unquote(x), Term}]))
-    end
-  end
-
-  defmacro eval(conn, {:when_unsat, _, [e1, [do: e2, else: e3]]}) do
-    quote do
-      conn = unquote(conn)
-      {_, :ok} = run(conn, push)
-      eval(conn, unquote(e1))
-      {_, {:ok, result}} = run(conn, check_sat)
-      {_, :ok} = run(conn, pop)
-
-      case result do
-        :unsat -> eval(conn, unquote(e2))
-        _ -> eval(conn, unquote(e3))
-      end
-    end
-  end
-
-  defmacro eval(_, other) do
-    raise "Unknown L0 expression #{Macro.to_string(other)}"
-  end
+defmacro eval(_, e) do
+  raise "Unknown expression #{Macro.to_string(e)}"
 end
 \end{lstlisting}

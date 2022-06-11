@@ -20,3 +20,11 @@ prover
 arity
 Read-Eval-Print-Loop
 unsatisfiable
+Holdsworth
+destructures
+subexpressions
+SmtLib
+subterms
+compositionally
+failable
+combinators

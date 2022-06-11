@@ -38,8 +38,7 @@ its metaprogramming mechanism based on macros, on top of which our proposed
 verification system has been implemented.
 
 The following examples will be exposed in the Elixir \gls{repl}, 
-called \verb|iex|, where \verb|iex>| represents its default prompt. This is a
-\verb|string| literal:
+called \verb|iex|, where \verb|iex>| represents its default prompt:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> "Hello world"
@@ -101,7 +100,7 @@ iex> 2 < true
 true
 \end{lstlisting}
 
-\subsubsection{Collection types and pattern matching}
+\subsubsection{Collection types}
 
 One of the simplest built-in collection types in Elixir is the inductive 
 \verb|list|, which consists of nested cons cells (i.e. pairs) and can be
@@ -112,11 +111,11 @@ iex> [] # The empty list
 [] 
 iex> [3 | []] # A cons cell
 [3]
-iex> [1 | [2 | [3 | []]]]
+iex> [1 | [2 | [3 | []]]] # Nested cons cells
 [1, 2, 3]
-iex> [1, 2 | [3]]
+iex> [1, 2, 3] # Syntax sugar
 [1, 2, 3]
-iex> [1, 2, 3]
+iex> [1, 2 | [3]] # Syntax mix
 [1, 2, 3]
 \end{lstlisting}
 
@@ -132,7 +131,7 @@ iex> [1 | [2 | 3]]
 \end{lstlisting}
 
 Functions in Elixir use to be referred by its name and arity. The \verb|hd/1|
-and \verb|tl/1| built-in functions for lists allow to respectively extract the
+and \verb|tl/1| built-in functions for lists allow to respectively obtain the
 first and second components of a cons cell:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
@@ -186,19 +185,93 @@ iex> elem({1, 2, 3}, 3)
 In this case, the \verb|tuple| type membership checking function is
 \verb|is_tuple/1|.
 
-\subsubsection{Blocks, assignments and control flow}
+\subsubsection{Blocks, pattern matching and control flow}
 
-\textcolor{red}{TODO}
+Elixir statements can be evaluated sequentially by gathering them inside a
+\verb|block| delimited by a semicolon or a line break:
 
-Comment what has to do with pattern matching (where to introduce it?)
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> 2 + 1;5 === 5;false
+false # Evaluates to the last statement value
+iex> (
+        2 + 1
+        5 === 5
+        false
+     )
+false
+\end{lstlisting}
+
+The \verb|match| operator \verb|=| allows binding values to variable names.
+Note that these bindings are not locally scoped inside blocks and, in 
+contrast to Erlang, variable bindings can be overridden:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> x = 2
+2
+iex> y = 2
+2
+iex> (z = 2, 4)
+4
+iex> z = 2
+2
+\end{lstlisting}
+
+This operator also allows performing pattern matching, which destructures 
+expressions according to patterns in order to check for a given shape and 
+bind subexpressions to variable names. They are particularly useful for 
+dealing with collection value types:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> {x, 3} = {2, 3}
+{2, 3}
+iex> {x, 3} = {2, 4}
+** (MatchError)
+iex> [h | t = [_, 3]] = [1, 2, 3] # A nested match
+[1, 2, 3]
+iex> t
+[2, 3]
+\end{lstlisting}
+
+Regarding control flow, although Elixir also has usual constructs such as 
+\verb|if|, one of the most general ones is \verb|case|. It Evaluates to 
+the first branch that matches the pattern and is compliant with a possible
+guard expression, and this is the only one that is evaluated:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> case {1, 2, 3} do 
+        {}                           -> 1 / 0
+        {1, x, 3} when is_integer(x) -> x + 1
+        {1, 2, 3}                    -> false
+     end
+3
+iex> x
+** (CompileError) # The case bindings are local
+iex> case 2 do 
+        false -> 3 
+     end 
+** (CaseClauseError) # No pattern matches the expression
+\end{lstlisting}
 
 \subsubsection{Function definitions}
 
-\textcolor{red}{TODO}
+A named function, identified by its name and arity, can be defined inside 
+\verb|modules| with different body definitions and different matching for
+its arguments:
 
-Comment what has to do with pattern matching (where to introduce it?)
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+defmodule Example do 
+  def fact(0) do 
+    1
+  end
 
-Multiple bodies, name+arity, and recursion
+  def fact(n) when is_integer(n) and n > 0 do 
+    n * fact(n - 1) # Recursion is allowed
+  end
+end
+\end{lstlisting}
+
+The rules for which one is applied are the same as in \verb|case| expressions,
+so function definitions can also express control flow [referencia].
 
 \subsection{Macros}
 
@@ -208,9 +281,32 @@ Describe, this will be our way to extend Elixir for code verification.
 
 \subsection{Interoperability}
 
-\textcolor{red}{TODO}
+\textcolor{red}{TODO} for the \acrshort{smt} solver integration.
 
-Different ways (ports, \gls{nif}s), for the \acrshort{smt} solver integration.
+Elixir offers several ways to interoperate with processes or libraries that are
+external to the Erlang Virtual Machine, apart from conventional \gls{io}. 
+
+One of them are \gls{nif}s, which allow loading and calling libraries
+implemented in other programming languages such as C. A crash in a \gls{nif}
+brings the Erlang Virtual Machine down too. [referencia docs erlang]
+
+A more safe approach is to launch an external process managed by the Erlang
+Virtual Machine and communicate with it by means of message passing, which in 
+Elixir is provided as a mechanism called \textit{ports}:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+port = Port.open({:spawn, "cat"}, [:binary])
+iex> send(port, {self(), {:command, "hello"}})
+iex> flush()
+# Received from the process
+{#Port<0.1444>, {:data, "hello"}} 
+send(port, {self(), :close})
+\end{lstlisting}
+
+A known drawback of this is that if the Erlang Virtual Machine crashes after 
+having launched a long-running process, its stdin and stdout channels
+will be closed, it won't be automatically terminated. This depends on the 
+behavior of the specific process when its communication channels are closed.
 
 \section{Satisfiability Modulo Theories}
 
@@ -226,6 +322,7 @@ Para esto último, poner un ejemplo referenciado de una teoría con \gls{smt} de
 algoritmo eficiente.
 
 \subsection{SMT-LIB}
+\label{prelim:smtlib}
 
 SMT-LIB is an initiative which tries to provide a common interface to interact
 with \acrshort{smt} solvers. It defines a solver-agnostic standard language
@@ -245,16 +342,111 @@ General description (many sorted, citado) and example, show the subset of comman
 & | & \texttt{( declare-sort } \langle\textit{ symbol }\rangle~\langle\textit{ numeral }\rangle\texttt{ ) }\\
 & | & \texttt{( declare-const } \langle\textit{ symbol }\rangle~\langle\textit{ sort }\rangle\texttt{ ) }\\
 & | & \texttt{( declare-fun } \langle\textit{ symbol }\rangle \texttt{ ( }\langle\textit{ symbol }\rangle^* \texttt{ ) }\langle\textit{ sort }\rangle\texttt{ ) }\\
-& | & \texttt{( define-fun } \langle\textit{ function\_def }\rangle\texttt{ ) }\\
 \end{array}
 \]
 
-Poner un problema sencillo de ejemplo
+\textcolor{red}{TODO}
+Poner un problema sencillo de ejemplo. Separar a anexo o buscar otro mas corto?
+
+\begin{verbatim}
+; The propositional variable 'pi_j' means that the node i appears in 
+; the path position j, where nodes are labeled as natural numbers 
+; starting from 0.
+(declare-const p0_0 Bool)
+(declare-const p0_1 Bool)
+(declare-const p0_2 Bool)
+(declare-const p0_3 Bool)
+(declare-const p1_0 Bool)
+(declare-const p1_1 Bool)
+(declare-const p1_2 Bool)
+(declare-const p1_3 Bool)
+(declare-const p2_0 Bool)
+(declare-const p2_1 Bool)
+(declare-const p2_2 Bool)
+(declare-const p2_3 Bool)
+(declare-const p3_0 Bool)
+(declare-const p3_1 Bool)
+(declare-const p3_2 Bool)
+(declare-const p3_3 Bool)
+
+; Every node should appear in at least one position.
+(assert (or p0_0 p0_1 p0_2 p0_3))
+(assert (or p1_0 p1_1 p1_2 p1_3))
+(assert (or p2_0 p2_1 p2_2 p2_3))
+(assert (or p3_0 p3_1 p3_2 p3_3))
+
+; Two different nodes do not appear in the same path position.
+(assert (not (and p0_0 p1_0)))
+(assert (not (and p0_1 p1_1)))
+(assert (not (and p0_2 p1_2)))
+(assert (not (and p0_3 p1_3)))
+(assert (not (and p0_0 p2_0)))
+(assert (not (and p0_1 p2_1)))
+(assert (not (and p0_2 p2_2)))
+(assert (not (and p0_3 p2_3)))
+(assert (not (and p0_0 p3_0)))
+(assert (not (and p0_1 p3_1)))
+(assert (not (and p0_2 p3_2)))
+(assert (not (and p0_3 p3_3)))
+(assert (not (and p1_0 p0_0)))
+(assert (not (and p1_1 p0_1)))
+(assert (not (and p1_2 p0_2)))
+(assert (not (and p1_3 p0_3)))
+(assert (not (and p1_0 p2_0)))
+(assert (not (and p1_1 p2_1)))
+(assert (not (and p1_2 p2_2)))
+(assert (not (and p1_3 p2_3)))
+(assert (not (and p1_0 p3_0)))
+(assert (not (and p1_1 p3_1)))
+(assert (not (and p1_2 p3_2)))
+(assert (not (and p1_3 p3_3)))
+(assert (not (and p2_0 p0_0)))
+(assert (not (and p2_1 p0_1)))
+(assert (not (and p2_2 p0_2)))
+(assert (not (and p2_3 p0_3)))
+(assert (not (and p2_0 p1_0)))
+(assert (not (and p2_1 p1_1)))
+(assert (not (and p2_2 p1_2)))
+(assert (not (and p2_3 p1_3)))
+(assert (not (and p2_0 p3_0)))
+(assert (not (and p2_1 p3_1)))
+(assert (not (and p2_2 p3_2)))
+(assert (not (and p2_3 p3_3)))
+(assert (not (and p3_0 p0_0)))
+(assert (not (and p3_1 p0_1)))
+(assert (not (and p3_2 p0_2)))
+(assert (not (and p3_3 p0_3)))
+(assert (not (and p3_0 p1_0)))
+(assert (not (and p3_1 p1_1)))
+(assert (not (and p3_2 p1_2)))
+(assert (not (and p3_3 p1_3)))
+(assert (not (and p3_0 p2_0)))
+(assert (not (and p3_1 p2_1)))
+(assert (not (and p3_2 p2_2)))
+(assert (not (and p3_3 p2_3)))
+
+; If two nodes are not adjacent, then they do not appear
+; consecutively in the path.
+(assert (=> p1_0 (not p3_1)))
+(assert (=> p1_1 (not p3_2)))
+(assert (=> p1_2 (not p3_3)))
+(assert (=> p2_0 (not p3_1)))
+(assert (=> p2_1 (not p3_2)))
+(assert (=> p2_2 (not p3_3)))
+(assert (=> p3_0 (not p1_1)))
+(assert (=> p3_1 (not p1_2)))
+(assert (=> p3_2 (not p1_3)))
+(assert (=> p3_0 (not p2_1)))
+(assert (=> p3_1 (not p2_2)))
+(assert (=> p3_2 (not p2_3)))
+
+(check-sat)
+\end{verbatim}
 
 \subsection{Z3}
 
-One of the \gls{smt} solvers that implements the SMT-LIB standard is the Z3
-theorem prover from Microsoft Research.
+One of the \acrshort{smt} solvers that implements the SMT-LIB standard is the
+Z3 theorem prover from Microsoft Research.
 
 \textcolor{red}{TODO}
 

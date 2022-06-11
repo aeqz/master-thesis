@@ -1,2 +1,7 @@
 {"rule":"TO_DO_HYPHEN","sentence":"^\\QREADME.md LaTeX code formatter Search for TODOs\\E$"}
 {"rule":"POSSESSIVE_APOSTROPHE","sentence":"^\\QThe \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q built-in functions for lists allow to respectively extract the first and second components of a cons cell:\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is a number, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is a variable, and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is a function symbol of arity \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
+{"rule":"POSSESSIVE_APOSTROPHE","sentence":"^\\QThe \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q built-in functions for lists allow to respectively obtain the first and second components of a cons cell:\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QIt is intended to be implemented as Elixir expressions that send SMT-LIB statements to an smt solver and will allow us to define a verification \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q on top of it.\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QIn order to implement our system, we will require to be able to interact with an smt solver from Elixir.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere other involved types like \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q are defined similarly.\\E$"}
