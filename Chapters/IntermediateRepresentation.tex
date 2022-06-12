@@ -583,27 +583,27 @@ case for nonempty lists:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 def translate_l1_exp(assumption, [{:|, _, [h, t]}]) do
-  {head, head_sem} = translate(assumption, h)
-  {tail, tail_sem} = translate(assumption, t)
+  {head, head_sem} = translate_l1_exp(assumption, h)
+  {tail, tail_sem} = translate_l1_exp(assumption, t)
   term = quote(do: :cons.(unquote(head), unquote(tail)))
 
   {
     term,
     quote do
-      context unquote(fn -> Msg.list_context(h, t) end) do
-        unquote(head_sem)
-        unquote(tail_sem)
-        add :is_nonempty_list.(unquote(term))
-        add :hd.(unquote(term)) == unquote(head)
-        add :tl.(unquote(term)) == unquote(tail)
-      end
+      unquote(head_sem)
+      unquote(tail_sem)
+      add :is_nonempty_list.(unquote(term))
+      add :hd.(unquote(term)) == unquote(head)
+      add :tl.(unquote(term)) == unquote(tail)
     end
   }
 end
 \end{lstlisting}
 
 This translation relies on a state of tuple constructors that are declared on 
-demand, but we have omitted such details in order to simplify.
+demand, and we also provide a mechanism to indicate the context of the program 
+in order to report helpful error messages, but we have omitted such details in 
+order to simplify.
 
 Then, we also implement a function to translate Elixir \gls{ast} corresponding
 to L2 expressions into L0 code:
@@ -634,7 +634,7 @@ def translate_l1_exp([{:assert, _, [f]}]) do
 end
 \end{lstlisting}
 
-For the \verb|unfold| case it relies on an environment of user defined specifications
+For the \verb|unfold| case, it relies on an environment of user defined specifications
 and body definitions in terms of L1 but, as previously, we omit such details in order 
 to simplify the explanation.
 
