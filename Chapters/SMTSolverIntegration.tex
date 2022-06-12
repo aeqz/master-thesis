@@ -27,14 +27,13 @@ be available for the Elixir community.
 \subsection{Example}
 \label{integ:dslexample}
 
-\textcolor{red}{TODO}: overview of the resulting tool, its \gls{dsl} and an example.
+\textcolor{red}{TODO}: overview of the resulting tool, its \gls{dsl} and the same 
+example as in the SMT-LIB section.
 
 \subsection{Implementation}
 
-Although Elixir is dynamically typed, it has a system to annotate the intended
-types for functions and a tool to perform a static analysis on them. We will
-use these specifications together with function identifiers to outline the ideas
-behind our implementation.
+As explained in \ref{prelim:typespecs}, we will use Elixir type specifications to guide 
+the explanation of our implementation in a simplified form.
 
 First, we define \verb|type|s to represent SMT-LIB commands and responses
 from the subset that we have exposed in \ref{prelim:smtlib}:
@@ -59,31 +58,29 @@ from the subset that we have exposed in \ref{prelim:smtlib}:
 where other involved types like \verb|numeral_t| and \verb|sort_t| are defined 
 similarly, many of them as an alias to built-in Elixir value types.
 
-Then, we implement a function \verb|commands/1| that, given a subset of the 
+Then, we implement a function that, given a subset of the 
 Elixir AST (i.e. our \gls{dsl}), transforms it into a list of SMT-LIB commands:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-@spec commands(ast) :: [command_t]
+@spec ast_to_commands(ast) :: [command_t]
 \end{lstlisting}
   
 Its implementation defines cases for each possible term and subterms, 
 like the following for the \verb|declare-const| command:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-@spec command(ast) :: command_t
-def command({:declare_const, _, [{v, s}]}) do
+@spec ast_to_command(SmtLib.ast) :: command_t
+def ast_to_command({:declare_const, _, [{v, s}]}) do
   {:declare_const, symbol(v), sort(s)}
 end
 \end{lstlisting}
 
-\textcolor{red}{TODO}: explain the DSL and distinguish from function names by modules
-
-Once we are able to transform the \gls{dsl} into SMT-LIB commands, we require 
-a function to render each command into a \verb|string| that an SMT-LIB
+On the one hand, once we are able to transform the \gls{dsl} into SMT-LIB commands, 
+we require a function to render each command into a \verb|string| that an SMT-LIB
 interpreter understands:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-@spec command(command_t) :: String.t
+@spec command_to_string(command_t) :: String.t
 \end{lstlisting}
 
 It handles compositionally the \verb|command_t| type with cases like the
@@ -94,20 +91,18 @@ following:
   "(declare-const #{symbol(s1)} #{sort(s2)})"
 \end{lstlisting}
 
-Communication with ports, implementation for Z3 but it can be other
-
-Finally, in order to understand the solver responses, we have also implemented
-a failable function that parses the received \verb|string|:
+On the other hand, in order to understand the solver responses, we also implement
+a function that parses a received \verb|string|:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-@spec general_response(String.t) :: 
+@spec general_response_from_string(String.t) :: 
   {:ok, general_response_t} 
   | {:error, term}
 \end{lstlisting}
 
 It has been implemented using \verb|nimble|, an Elixir package of parser
 combinators, in order to delegate this task and get the reliability of a well
-tested tool [referenciar]. Its top level parser definition is as follows:
+tested tool [reference]. Its top level parser definition is as follows:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defparsec :general_response,
@@ -120,8 +115,27 @@ defparsec :general_response,
   ])
 \end{lstlisting}
 
-We expose then the public \gls{api} of the package under a top level module
-that can be used as in \ref{integ:dslexample}.
+Finally, to interact with the solver, we have defined an Elixir low level protocol
+to send SMT-LIB commands and receive SMT-LIB responses in a synchronous way:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+defprotocol Connection do
+  @spec send_command(t, command_t) :: 
+    :ok | {:error, term}
+  def send_command(connection, command)
+
+  @spec receive_response(t) 
+    :: {:ok, general_response_t} | {:error, term}
+  def receive_response(connection)
+end
+\end{lstlisting}
+
+We provide an implementation to communicate with Z3 through ports and allow to configure
+some of its parameters like the timeout, but other implementations involving different
+solvers and communication mechanisms should also be possible.
+
+All of this makes possible to implement and provide the public \gls{api} of the 
+package under a top level module that can be used as in \ref{integ:dslexample}.
 
 \section{The L0 language}
 
@@ -242,6 +256,7 @@ We have also required this to happen if the same variable is declared twice
 or if a formula with undeclared variables is being added.
 
 \subsection{Implementation}
+\label{integ:l0implementation}
 
 It is difficult to justify the compliance of an implementation of L0 with its
 formal semantics due to the undecidability of the \gls{smt} problem in the 
@@ -285,7 +300,7 @@ defmacro eval(conn, {:add, _, [f]}) do
 end
 \end{lstlisting}
 
-similarly, \verb|declare_const| expression corresponds to a \verb|declare_const| in 
+Similarly, the \verb|declare_const| expression corresponds to a \verb|declare_const| in 
 SMT-LIB:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]

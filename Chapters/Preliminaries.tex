@@ -15,7 +15,7 @@ theorem provers such as Z3.
 \section{Elixir}
 
 Elixir is a general-purpose programming language that runs on the Erlang
-Virtual Machine, where also the Erlang programming language runs [referenciar].
+Virtual Machine, where also the Erlang programming language runs [reference].
 Both of them share some features, like their actor-based concurrency model,
 and have a native capability to interoperate. Although Elixir is younger than
 Erlang, this has allowed the former to be part of an ecosystem which has been
@@ -23,9 +23,9 @@ developed across more than three decades.
 
 We have chosen such a programming language for this research because,
 first, it is a modern programming language ready to be used in the
-industry [referenciar]. Second, it has the unusual property in formal 
+industry [reference]. Second, it has the unusual property in formal 
 verification to be dynamically typed, but its functional programming principles
-will make it easier to reason about [referenciar]. Finally, its metaprogramming
+will make it easier to reason about [reference]. Finally, its metaprogramming
 capabilities will allow us to extend it according to our needs without requiring
 to modify its compiler.
 
@@ -273,10 +273,31 @@ end
 The rules for which one is applied are the same as in \verb|case| expressions,
 so function definitions can also express control flow \citep{programmingElixir}.
 
+\subsubsection{Type specifications}
+\label{prelim:typespecs}
+
+Although Elixir is dynamically typed, it has a system to annotate the intended
+types for functions and a tool to perform a static analysis on them. We will
+use these specifications together with function identifiers to outline the ideas
+behind our implementations along this document.
+
+A function type specification can be defined as 
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@spec function_name(type_1, type_2, ... type_n) :: return_type
+\end{lstlisting}
+
+and types can be defined by means of composing other types with constructs such
+as the \verb+|+ operator:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@type tuple_or_nat :: tuple | non_neg_integer
+\end{lstlisting}
+
 \subsection{Macros}
 
 Because of its metaprogramming capabilities based on macros, Elixir is a suitable
-language for implementing \gls{dsl}s [referenciar]. This will allow us to extend 
+language for implementing \gls{dsl}s [reference]. This will allow us to extend 
 it without requiring to leave the language itself.
 
 The main construct for this purpose is \verb|defmacro| which, as a curiosity,
@@ -293,10 +314,62 @@ value must also be valid Elixir \gls{ast} that will replace the macro invocation
 at compile-time. The resulting code may also contain other macros that will be
 expanded recursively.
 
-\textcolor{red}{TODO}: explain the Elixir AST and the usage of quote, unquote, 
-unquotesplicing, Macro.escape, etc
+By using Elixir type specifications, its \gls{ast} type is defined in the 
+\verb|Macro| module as
 
-\textcolor{red}{TODO}: examples
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@type ast ::
+  atom
+  | number
+  | [ast]
+  | {ast, ast}
+  | ast_expr
+
+@type ast_expr :: {ast_expr | atom, metadata, atom | [ast]}
+\end{lstlisting}
+
+where \verb|ast_expr| represents a function invocation when the first component
+is the function name, and the third one its arguments. We can obtain the \gls{ast}
+corresponding to an Elixir expression with the \verb|quote/1| macro:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> quote do 
+        1 + 2
+     end
+{:+, [context: Elixir, import: Kernel], [1, 2]}
+\end{lstlisting}
+
+and it is the main construct to transform the input \gls{ast} into new \gls{ast}
+when defining a macro, together with \verb|unquote/1| to interpolate expressions
+inside a quoted one:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+defmacro sum_into_product({:+, _, [x, y]}) do
+  quote do
+    unquote(x) * unquote(y)
+  end
+end
+\end{lstlisting}
+
+Elixir also offers several constructs to deal with an advanced usage 
+of macros, such as \verb|unquote_splicing/1| to interpolate an \gls{ast} list as 
+the arguments of a function invocation, and \verb|escape/1| to introduce
+\gls{ast} as it is (i.e. allows to obtain the \gls{ast} of \gls{ast} data):
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+iex> quote do
+        hello(unquote_splicing([2, 3]))
+     end
+{:hello, [], [2, 3]}
+iex> quote(do: quote(do: 2 + 2))
+{
+  :quote, 
+  [context: Elixir],
+  [[do: {:+, [context: Elixir, import: Kernel], [2, 2]}]]
+}
+iex> Macro.escape(quote(do: 2 + 2))
+{:{}, [], [:+, [context: Elixir, import: Kernel], [2, 2]]}
+\end{lstlisting}
 
 \subsection{Interoperability}
 
@@ -337,7 +410,7 @@ a given logical formula is satisfiable within a specific theory
 is decidable and, moreover, to design efficient algorithms specialized in 
 solving this problem for a theory.
 
-\textcolor{red}{TODO}: reference of a theory with smt decidable and some 
+\textcolor{red}{TODO}: reference and comment a theory with smt decidable and some 
 efficient algorithm.
 
 \subsection{SMT-LIB}
@@ -349,7 +422,7 @@ with a Lisp-like syntax to both configure a solver, manage it, encode an
 \gls{smt} problem instance and query for solutions.
 
 \textcolor{red}{TODO}: general description, many sorted and references. 
-Show the subset of commands and responses that we are going to use
+Show the subset of commands and responses that we are going to use.
 
 \[
 \begin{array}{rcll}
@@ -363,7 +436,17 @@ Show the subset of commands and responses that we are going to use
 \end{array}
 \]
 
-\textcolor{red}{TODO}: show an example like the following
+\[
+\begin{array}{rcll}
+\langle\textit{ general\_response }\rangle & ::= & \texttt{success}\\
+& | & \texttt{unsupported}\\
+& | & \texttt{( error } \langle\textit{ string }\rangle \texttt{ ) }\\
+& | & \langle\textit{ specific\_success\_response }\rangle\\
+\end{array}
+\]
+
+\textcolor{red}{TODO}: show an example like the following. 
+Maybe this one is too long (appendix?).
 
 \begin{verbatim}
 ; The propositional variable 'pi_j' means that the node i appears in 
@@ -466,7 +549,7 @@ One of the \acrshort{smt} solvers that implements the SMT-LIB standard is the
 Z3 theorem prover from Microsoft Research.
 
 \textcolor{red}{TODO}: reference, show its usage with -in and say why we have
-chosen it and why we only communicate by means of smtlib.
+chosen it and why we only communicate with it by means of SMT-LIB.
 
 Note that there may exist subtle non-compliances when a solver implements the
 SMT-LIB standard. For example, we have found that Z3 does not include the

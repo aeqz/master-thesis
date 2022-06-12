@@ -45,8 +45,8 @@ Let us define the syntax of L1 expressions and statements:
 
 \subsection{Built-in declarations}
 
-\textcolor{red}{TODO}: required SMT-LIB preamble for the translation.
-Organize the section
+\textcolor{red}{TODO}: Organize the section about the required SMT-LIB preamble for 
+the translation.
 
 During the translation of L1 expressions we require some 
 defined sorts, constants and functions. In our implementation,
@@ -91,10 +91,8 @@ in our implementation we declare each one the first time that it is required.
 
 \subsection{Built-in specifications}
 
-\textcolor{red}{TODO}: organize the section
-
-Built-in specifications and SMT-LIB code to emulate the 
-Elixir semantics.
+\textcolor{red}{TODO}: organize the section about the built-in specifications and 
+SMT-LIB code to emulate the Elixir semantics.
 
 We shall also assume that for every function symbol $f \in \Sigma^{1}$ of 
 arity $n$ there is an overloaded specification expressed in terms of L0 
@@ -561,20 +559,83 @@ They are based on the types and will be useful for reasoning about termination.
 
 Show examples in a separate section before this one if possible.
 
-Mention relevant facts of the development process and implementation details:
+We are going to explain our implementation in a schematic way in order to give its 
+main idea. 
 
-By using the L0 language implementation
+First, we implement a function to translate Elixir \gls{ast} corresponding
+to L1 expressions (i.e. its \gls{dsl}), together with an assumption in terms of L0, 
+into the term that it represents and L0 code (i.e. also its \gls{dsl}) that models 
+its semantics:
 
-function to translate L1 AST expressions into (t, L0)
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@spec translate_l1_exp(L0Exp.ast, L1Exp.ast) 
+  :: {L0Exp.ast, L0Exp.ast}
+\end{lstlisting}
 
-it relies on an env of function specifications, where tuple constructors are 
-defined lazily into the system.
+Its definition syntax matches pretty closely the formal version, as in this 
+case for nonempty lists:
 
-function to translate L1 AST statements into L0, using the previous one 
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+def translate_l1_exp(assumption, [{:|, _, [h, t]}]) do
+  {head, head_sem} = translate(assumption, h)
+  {tail, tail_sem} = translate(assumption, t)
+  term = quote(do: :cons.(unquote(head), unquote(tail)))
 
-for the unfold, it relies on an env of user defined specifications and 
-body (in L1)
+  {
+    term,
+    quote do
+      context unquote(fn -> Msg.list_context(h, t) end) do
+        unquote(head_sem)
+        unquote(tail_sem)
+        add :is_nonempty_list.(unquote(term))
+        add :hd.(unquote(term)) == unquote(head)
+        add :tl.(unquote(term)) == unquote(tail)
+      end
+    end
+  }
+end
+\end{lstlisting}
 
-now we can translate AST of L1 and evaluate it as if it were L0.
+This translation relies on a state of tuple constructors that are declared on 
+demand, but we have omitted such details in order to simplify.
 
-also, public API provided in a top level module
+Then, we also implement a function to translate Elixir \gls{ast} corresponding
+to L2 expressions into L0 code:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@spec translate_l1_exp(L1Exp.ast) :: L0Exp.ast
+\end{lstlisting}
+
+It also matches closely the formal version, as in this case for the 
+\verb|assert| statement:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+def translate_l1_exp([{:assert, _, [f]}]) do
+  {term, term_sem} = translate_l1_exp(nil, f)
+
+  quote do
+    when_unsat add !:is_boolean.(unquote(term)) do
+    else
+      fail
+    end
+
+    when_unsat add !:boolean_val.(unquote(term)) do
+      add :boolean_val.(unquote(term))
+    else
+      fail
+    end
+  end
+end
+\end{lstlisting}
+
+For the \verb|unfold| case it relies on an environment of user defined specifications
+and body definitions in terms of L1 but, as previously, we omit such details in order 
+to simplify the explanation.
+
+Finally, this allows to implement a public \gls{api} for the package which defines 
+the corresponding macros from the example [reference]. They translate the L1 \gls{dsl} 
+into L0 and evaluate it as in \ref{integ:l0implementation}.
+
+Note that our final implementation also introduces some strategies to improve its 
+performance. For example, instead of translating the whole L1 code into L0 and then 
+evaluate it, we can translate and evaluate each L1 statement one at a time.
