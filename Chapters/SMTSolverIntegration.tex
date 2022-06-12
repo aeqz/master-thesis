@@ -10,7 +10,7 @@ Then, we will introduce a simple formal language whose semantics are defined
 in terms of the \gls{smt} problem, and an example of its implementation in 
 Elixir as a result of the previous integration with a solver.
 
-\section{SMT-LIB interpreter bindings}
+\section{SMT-LIB interpreter binding}
 
 Initially, we found an Elixir package that provides integration with Z3 and is
 implemented using ports, but it seemed to be not so mature and maintained. It 
@@ -21,14 +21,17 @@ some point.
 To implement our own SMT-LIB interpreter binding was an opportunity to get
 started with Elixir in practice, and also with its macro system. This has 
 given place to a side project which consists of an Elixir \gls{dsl} to
-communicate with SMT-LIB interpreters, which may be at short term useful to
-the Elixir community.
+communicate with SMT-LIB interpreters, and may be at the end provided to 
+be available for the Elixir community.
 
-\subsection{Elixir SmtLib example}
+\subsection{Example}
+\label{integ:dslexample}
+
+\textcolor{red}{TODO}
 
 Present the resulting tool, the \gls{dsl} and an example.
 
-\subsection{SmtLib implementation}
+\subsection{Implementation}
 
 Although Elixir is dynamically typed, it has a system to annotate the intended
 types for functions and a tool to perform a static analysis on them. We will
@@ -50,7 +53,11 @@ that we have exposed in \ref{prelim:smtlib}:
 \end{lstlisting}
 
 where other involved types like \verb|numeral_t| and \verb|sort_t| are defined 
-similarly.
+similarly, many of them as an alias to built-in Elixir value types.
+
+\textcolor{red}{TODO} 
+
+Tambien el de respuesta?
 
 Then, we implement a function \verb|commands/1| that, given a subset of the 
 Elixir AST (i.e. our \gls{dsl}), transforms it into a list of SMT-LIB commands:
@@ -59,8 +66,8 @@ Elixir AST (i.e. our \gls{dsl}), transforms it into a list of SMT-LIB commands:
 @spec commands(ast) :: [command_t]
 \end{lstlisting}
   
-The implementation defines cases for each possible term and its possible
-subterms, like the following:
+Its implementation defines cases for each possible term and subterms, 
+like the following for the \verb|declare-const| command:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec command(ast) :: command_t
@@ -69,7 +76,9 @@ def command({:declare_const, _, [{v, s}]}) do
 end
 \end{lstlisting}
 
-\textcolor{red}{TODO} explain the DSL and think about split this into subsections
+\textcolor{red}{TODO} 
+
+Explain the DSL and think about split this into subsections
 distinguish from function names by modules
 
 Once we are able to transform the \gls{dsl} into SMT-LIB commands, we require 
@@ -94,14 +103,14 @@ Finally, in order to understand the solver responses, we have also implemented
 a failable function that parses the received \verb|string|:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-@spec general_response(String.t()) :: 
+@spec general_response(String.t) :: 
   {:ok, general_response_t} 
   | {:error, term}
 \end{lstlisting}
 
 It has been implemented using \verb|nimble|, an Elixir package of parser
 combinators, in order to delegate this task and get the reliability of a well
-tested tool [referencia]. Its top level parser definition is as follows:
+tested tool [referenciar]. Its top level parser definition is as follows:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defparsec :general_response,
@@ -113,6 +122,9 @@ defparsec :general_response,
     token(specific_success_response()) |> eos()
   ])
 \end{lstlisting}
+
+We expose then the public \gls{api} of the package under a top level module
+that can be used as in \ref{integ:dslexample}.
 
 \section{The L0 language}
 
@@ -234,76 +246,141 @@ or if a formula with undeclared variables is being added.
 
 \subsection{Implementation}
 
-\textcolor{red}{TODO}
+It is difficult to justify the compliance of an implementation of L0 with its
+formal semantics due to the undecidability of the \gls{smt} problem in the 
+general case. In practice, this task will be delegated to an \acrshort{smt} 
+solver as if it were a black box that can solve the problem.
 
-Simple implementation using the SMT-LIB bindings for Elixir. Show a simple example.
+We can implement a simple Elixir \gls{dsl} for the L0 language in terms of our
+SMT-LIB binding for Elixir. The \verb|fail| expression raises an exception:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-defmacro eval(_, {:skip, _, _}) do
-  quote do
-    nil
-  end
-end
-
 defmacro eval(_, {:fail, _, _}) do
   quote do
     raise "Verification failed"
   end
 end
+\end{lstlisting}
 
-defmacro eval(conn, {:seq, _, [e1, e2]}) do
-  quote do
-    conn = unquote(conn)
-    eval(conn, unquote(e1))
-    eval(conn, unquote(e2))
-  end
-end
+The \verb|local| expression surrounds the evaluation in between
+\verb|pop| and \verb|push| SMT-LIB commands:
 
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defmacro eval(conn, {:local, _, [e]}) do
   quote do
     conn = unquote(conn)
     {_, :ok} = run(conn, push)
-    eval(conn, unquote(e))
+    eval conn, unquote(e)
     {_, :ok} = run(conn, pop)
   end
 end
+\end{lstlisting}
 
+The \verb|add| expression corresponds to an \verb|assert| in 
+SMT-LIB:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defmacro eval(conn, {:add, _, [f]}) do
   quote do
     conn = unquote(conn)
     {_, :ok} = run(conn, assert(unquote(f)))
   end
 end
+\end{lstlisting}
 
+similarly, \verb|declare_const| expression corresponds to a \verb|declare_const| in 
+SMT-LIB:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defmacro eval(conn, {:declare_const, _, [x]}) do
   quote do
     conn = unquote(conn)
-    {_, :ok} = run(
-      conn, 
-      declare_const([{unquote(x), Term}])
-    )
+    {_, :ok} = 
+      run(conn, declare_const([{unquote(x), Term}]))
   end
 end
+\end{lstlisting}
 
+The \verb|eval| expression implementation is slightly longer:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defmacro eval(
   conn, 
-  {:when_unsat, _, [e1, [do: e2, else: e3]]}) 
-do
+  {:when_unsat, _, [e1, [do: e2, else: e3]]}
+) do
   quote do
     conn = unquote(conn)
     {_, :ok} = run(conn, push)
-    eval(conn, unquote(e1))
+    eval conn, unquote(e1)
     {_, {:ok, result}} = run(conn, check_sat)
     {_, :ok} = run(conn, pop)
 
     case result do
-      :unsat -> eval(conn, unquote(e2))
-      _ -> eval(conn, unquote(e3))
+      :unsat -> eval conn, unquote(e2)
+      _ -> eval conn, unquote(e3)
     end
   end
 end
+\end{lstlisting}
 
-defmacro eval(_, e) do
-  raise "Unknown expression #{Macro.to_string(e)}"
+Finally, instead of implementing a \verb|seq| expression, we can reuse 
+Elixir blocks by handling several cases:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+defmacro eval(
+  conn, 
+  do: {:__block__, [], es}
+) when is_list(es) do
+  quote do
+    conn = unquote(conn)
+    eval conn, unquote(es)
+  end
+end
+
+defmacro eval(conn, do: e) do
+  quote do
+    conn = unquote(conn)
+    eval conn, unquote(e)
+  end
+end
+
+defmacro eval(_, []) do
+  nil
+end
+
+defmacro eval(conn, [e | es]) do
+  quote do
+    conn = unquote(conn)
+    eval conn, unquote(e)
+    eval conn, unquote(es)
+  end
+end
+\end{lstlisting}
+
+We can also include a general case that raises an exception if 
+the provided Elixir \gls{ast} does not correspond to our language:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+defmacro eval(_, other) do
+  raise "Unknown expression #{Macro.to_string(other)}"
+end
+\end{lstlisting}
+
+Assuming the defined macros to be in scope, a \verb|conn| variable that
+represents a fresh connection with an \acrshort{smt} solver which
+has the \verb|Term| sort already defined, this would be a simple example
+of its usage:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+eval conn do
+  declare_const :x
+
+  # Replacing `!=' by `=' leads to 
+  # a verification exception
+  when_unsat add :x != :x do
+    skip
+  else
+    fail
+  end
 end
 \end{lstlisting}

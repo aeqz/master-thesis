@@ -25,15 +25,15 @@ We have chosen such a programming language for this research because,
 first, it is a modern programming language ready to be used in the
 industry [referenciar]. Second, it has the unusual property in formal 
 verification to be dynamically typed, but its functional programming principles
-will make it easier to reason about. Finally, its metaprogramming capabilities
-will allow us to extend it according to our needs without requiring to modify
-its compiler.
+will make it easier to reason about [referenciar]. Finally, its metaprogramming
+capabilities will allow us to extend it according to our needs without requiring
+to modify its compiler.
 
 \subsection{General description}
 
 In this section, we introduce the basic concepts and constructs of sequential
-programming in Elixir. Our aim is to show the behavior of the language subset
-that is studied later in this document for its verification, and also
+programming in Elixir. Our aim is to show only the behavior of the language
+subset that is studied later in this document for its verification, and also
 its metaprogramming mechanism based on macros, on top of which our proposed
 verification system has been implemented.
 
@@ -121,7 +121,7 @@ iex> [1, 2 | [3]] # Syntax mix
 
 It is not required for the \verb|list| elements to be of the same type, and
 improper lists (i.e. those that do not have an empty list as the second element
-in the last cons cell [referenciar docs]) are also allowed:
+in the deepest cons cell [referenciar]) are also allowed:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> [1, 2, false]
@@ -188,7 +188,7 @@ In this case, the \verb|tuple| type membership checking function is
 \subsubsection{Blocks, pattern matching and control flow}
 
 Elixir statements can be evaluated sequentially by gathering them inside a
-\verb|block| delimited by a semicolon or a line break:
+\verb|block|, delimited by a semicolon or a line break:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> 2 + 1;5 === 5;false
@@ -232,10 +232,10 @@ iex> t
 [2, 3]
 \end{lstlisting}
 
-Regarding control flow, although Elixir also has usual constructs such as 
+Regarding control flow, although Elixir provides usual constructs such as 
 \verb|if|, one of the most general ones is \verb|case|. It Evaluates to 
 the first branch that matches the pattern and is compliant with a possible
-guard expression, and this is the only one that is evaluated:
+guard expression, and this is the only branch that is evaluated:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> case {1, 2, 3} do 
@@ -255,7 +255,7 @@ iex> case 2 do
 \subsubsection{Function definitions}
 
 A named function, identified by its name and arity, can be defined inside 
-\verb|modules| with different body definitions and different matching for
+a \verb|module| with different body definitions and different matching for
 its arguments:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
@@ -271,7 +271,7 @@ end
 \end{lstlisting}
 
 The rules for which one is applied are the same as in \verb|case| expressions,
-so function definitions can also express control flow [referencia].
+so function definitions can also express control flow [referenciar].
 
 \subsection{Macros}
 
@@ -281,14 +281,15 @@ Describe, this will be our way to extend Elixir for code verification.
 
 \subsection{Interoperability}
 
-\textcolor{red}{TODO} for the \acrshort{smt} solver integration.
-
 Elixir offers several ways to interoperate with processes or libraries that are
-external to the Erlang Virtual Machine, apart from conventional \gls{io}. 
+external to the Erlang Virtual Machine, apart from conventional \gls{io}. We are
+interested in these features due to the integration of an \acrshort{smt} solver
+in Elixir, which will surely be an external process.
 
-One of them are \gls{nif}s, which allow loading and calling libraries
-implemented in other programming languages such as C. A crash in a \gls{nif}
-brings the Erlang Virtual Machine down too. [referencia docs erlang]
+One of them is to use \gls{nif}s, which allow loading and calling libraries
+implemented in other programming languages such as C. When using this system,
+it is important to know that a crash in a \gls{nif} brings the Erlang Virtual 
+Machine down too [referenciar].
 
 A more safe approach is to launch an external process managed by the Erlang
 Virtual Machine and communicate with it by means of message passing, which in 
@@ -303,10 +304,11 @@ iex> flush()
 send(port, {self(), :close})
 \end{lstlisting}
 
-A known drawback of this is that if the Erlang Virtual Machine crashes after 
-having launched a long-running process, its stdin and stdout channels
-will be closed, it won't be automatically terminated. This depends on the 
-behavior of the specific process when its communication channels are closed.
+A known drawback of this other mechanism is that, if the Erlang Virtual 
+Machine crashes after having launched a long-running process, then its \verb|stdin| 
+and \verb|stdout| channels will be closed, but it won't be automatically terminated.
+This depends on how the specific process behaves when its communication channels are
+closed [referenciar].
 
 \section{Satisfiability Modulo Theories}
 
@@ -346,6 +348,9 @@ General description (many sorted, citado) and example, show the subset of comman
 \]
 
 \textcolor{red}{TODO}
+
+Poner tambien la respuesta
+
 Poner un problema sencillo de ejemplo. Separar a anexo o buscar otro mas corto?
 
 \begin{verbatim}
@@ -464,4 +469,10 @@ This may add confusion because the \verb|echo| command is the only one whose
 response is a string literal and, as this is not the case for Z3, there are 
 corner cases in which a command response can be confused with a printed string
 intended to delimit command responses, which is one of the proposed usages for
-\verb|echo| in \cite{smtLibStandard}.
+\verb|echo| in \cite{smtLibStandard}:
+
+\begin{verbatim}
+$ z3 -in <<<`(check-sat) (echo "sat")'
+sat
+sat
+\end{verbatim}

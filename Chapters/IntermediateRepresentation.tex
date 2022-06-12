@@ -5,6 +5,8 @@
 
 \textcolor{red}{TODO}
 
+General explanation
+
 \section{Syntax}
 
 We denote by $\Sigma^{1} = \{ \texttt{===}, \texttt{<=}, \texttt{>=}, 
@@ -24,24 +26,26 @@ Let us define the syntax of L1 expressions and statements:
 & | & \andE{e_1}{e_2} & \{ \textrm{conjunction} \}\\
 & | & \orE{e_1}{e_2} & \{ \textrm{disjunction} \}\\
 & | & [] & \{ \textrm{empty list} \}\\
-& | & [e_1~|~e_2] & \{ \textrm{list constructor} \}\\
+& | & [e_1~|~e_2] & \{ \textrm{list cons cell} \}\\
 & | & \{e_1, \ldots, e_n\} & \{ \textrm{tuple} \}\\
 & | & f(e_1, \ldots, e_n) & \{ \textrm{function or operator application} \}\\
 
 \\
-\Stm \ni S & ::= & \skipE\\
- & | & \blockE~S\\
- & | & \havocE~x\\
- & | & S_1;S_2\\
- & | & \assumeE~e\\
- & | & \assertE~e\\
- & | & \unfoldE~f(e_1, \dots, e_n)\\
+\Stm \ni S & ::= & \skipE & \{ \textrm{do nothing} \} \\
+ & | & \blockE~S & \{ \textrm{local scoped evaluation} \}\\
+ & | & \havocE~x & \{ \textrm{variable declaration} \}\\
+ & | & S_1;S_2 & \{ \textrm{sequential evaluation} \}\\
+ & | & \assumeE~e & \{ \textrm{assume a formula} \}\\
+ & | & \assertE~e & \{ \textrm{assert a formula} \}\\
+ & | & \unfoldE~f(e_1, \dots, e_n) & \{ \textrm{unfold a function application} \}\\
 \end{array}
 \]
 
 \section{Semantics}
 
 \textcolor{red}{TODO}
+
+General explanation
 
 \subsection{Built-in declarations}
 
@@ -99,7 +103,7 @@ Elixir semantics.
 
 We shall also assume that for every function symbol $f \in \Sigma^{1}$ of 
 arity $n$ there is an overloaded specification expressed in terms of L0 
-formulae. Here the word \emph{overloaded} means that there could by many 
+formulae. Here the word \emph{overloaded} means that there could be many 
 pre/post-condition pairs for each function. For example, equality can be 
 specified as follows:
 
@@ -130,16 +134,13 @@ uninterpreted function symbol in the logic. On the contrary, the $=$,
 $\Leftrightarrow$, $\wedge$ in the specification above are actual connectives 
 and operators of the underlying logic.
 
-These specifications are built-in into the system. They are not provided by 
-the user. If we apply an operator 
-that has several pre/postcondition pairs, we check all the preconditions and 
-only assume those postconditions corresponding to the preconditions that hold.
-
-Therefore, each function $f \in \Sigma^{1}$ of arity $n$ may have several 
-specifications $\sigma_1, \ldots, \sigma_m$. Each specification is a pair 
+We denote by $\sigma_1, \ldots, \sigma_m$ the specifications of a 
+function $f \in \Sigma^{1}$. Each one is a pair 
 $(\varphi(x_1, \ldots, x_n), \psi(x_1, \ldots, x_n))$, where the $x_i$ 
-variables denote the parameters of the function. We denote by $\Spec{f}$ 
+variables denote the parameters of the function. We also denote by $\Spec{f}$ 
 the set of specifications of $f$.
+
+\textcolor{red}{TODO}
 
 In order to allow L1 expressions to model the semantics of Elixir, the 
 corresponding uninterpreted functions must be declared in SMT-LIB
@@ -278,9 +279,17 @@ directly with the built-in declared L0 functions:
 
 and it is similar for the remaining types.
 
+\textcolor{red}{TODO}
+
+Explicar cosas aun no cubiertas, como comparacion de valores de distinto tipo.
+También complicaciones como que no pudimos modelar asi and y or por el 
+cortocircuito.
+
 \subsection{Translation into L0}
 
 \textcolor{red}{TODO}
+
+General explanation
 
 We shall define two functions:
 
@@ -295,7 +304,7 @@ Given an L1 expression $e$, the application $\trExp{\gamma}{e}$ returns a tuple
 $(\epsilon, t)$, in which $\epsilon$ is an L0 expression that models the
 semantics of $e$, and $t$ is the term in the underlying logic that will 
 be used to refer to the result of $e$. The $\gamma$ models those facts that are 
-known by the time $e$ is evaluated. This is needed to handle the short circuit-based 
+known by the time $e$ is evaluated and is needed to handle the short circuit-based 
 semantics of $\mathbf{and}$ and $\mathbf{or}$. We are going to omit this $\gamma$
 parameter when it models no knowledge:
 
@@ -564,4 +573,20 @@ They are based on the types and will be useful for reasoning about termination.
 
 Show examples in a separate section before this one if possible.
 
-Mention relevant facts of the development process and implementation details.
+Mention relevant facts of the development process and implementation details:
+
+By using the L0 language implementation
+
+function to translate L1 AST expressions into (t, L0)
+
+it relies on an env of function specifications, where tuple constructors are 
+defined lazily into the system.
+
+function to translate L1 AST statements into L0, using the previous one 
+
+for the unfold, it relies on an env of user defined specifications and 
+body (in L1)
+
+now we can translate AST of L1 and evaluate it as if it were L0.
+
+also, public API provided in a top level module
