@@ -27,9 +27,7 @@ be available for the Elixir community.
 \subsection{Example}
 \label{integ:dslexample}
 
-\textcolor{red}{TODO}
-
-Present the resulting tool, the \gls{dsl} and an example.
+\textcolor{red}{TODO}: overview of the resulting tool, its \gls{dsl} and an example.
 
 \subsection{Implementation}
 
@@ -38,8 +36,8 @@ types for functions and a tool to perform a static analysis on them. We will
 use these specifications together with function identifiers to outline the ideas
 behind our implementation.
 
-First, we define a \verb|type| to represent an SMT-LIB command from the subset
-that we have exposed in \ref{prelim:smtlib}:
+First, we define \verb|type|s to represent SMT-LIB commands and responses
+from the subset that we have exposed in \ref{prelim:smtlib}:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @type command_t ::
@@ -50,14 +48,16 @@ that we have exposed in \ref{prelim:smtlib}:
   | {:declare_const, symbol_t, sort_t}
   | {:declare_sort, symbol_t, numeral_t}
   | {:declare_fun, symbol_t, [sort_t], sort_t}
+
+@type general_response_t ::
+  :success
+  | :unsupported
+  | {:error, string_t}
+  | {:specific_success_response, specific_success_response_t}
 \end{lstlisting}
 
 where other involved types like \verb|numeral_t| and \verb|sort_t| are defined 
 similarly, many of them as an alias to built-in Elixir value types.
-
-\textcolor{red}{TODO} 
-
-Tambien el de respuesta?
 
 Then, we implement a function \verb|commands/1| that, given a subset of the 
 Elixir AST (i.e. our \gls{dsl}), transforms it into a list of SMT-LIB commands:
@@ -76,10 +76,7 @@ def command({:declare_const, _, [{v, s}]}) do
 end
 \end{lstlisting}
 
-\textcolor{red}{TODO} 
-
-Explain the DSL and think about split this into subsections
-distinguish from function names by modules
+\textcolor{red}{TODO}: explain the DSL and distinguish from function names by modules
 
 Once we are able to transform the \gls{dsl} into SMT-LIB commands, we require 
 a function to render each command into a \verb|string| that an SMT-LIB

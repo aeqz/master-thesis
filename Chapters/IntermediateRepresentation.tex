@@ -3,9 +3,7 @@
 
 \chapterquote{This process of using tools you built yesterday to help build bigger tools today is called abstraction, and it is the most powerful force I know of in the universe}{Sandy Maguire}
 
-\textcolor{red}{TODO}
-
-General explanation
+\textcolor{red}{TODO}: general explanation
 
 \section{Syntax}
 
@@ -43,15 +41,12 @@ Let us define the syntax of L1 expressions and statements:
 
 \section{Semantics}
 
-\textcolor{red}{TODO}
-
-General explanation
+\textcolor{red}{TODO}: general explanation
 
 \subsection{Built-in declarations}
 
-\textcolor{red}{TODO}
-
-Required SMT-LIB preamble for the translation.
+\textcolor{red}{TODO}: required SMT-LIB preamble for the translation.
+Organize the section
 
 During the translation of L1 expressions we require some 
 defined sorts, constants and functions. In our implementation,
@@ -96,7 +91,7 @@ in our implementation we declare each one the first time that it is required.
 
 \subsection{Built-in specifications}
 
-\textcolor{red}{TODO}
+\textcolor{red}{TODO}: organize the section
 
 Built-in specifications and SMT-LIB code to emulate the 
 Elixir semantics.
@@ -140,7 +135,7 @@ $(\varphi(x_1, \ldots, x_n), \psi(x_1, \ldots, x_n))$, where the $x_i$
 variables denote the parameters of the function. We also denote by $\Spec{f}$ 
 the set of specifications of $f$.
 
-\textcolor{red}{TODO}
+\textcolor{red}{TODO}: organize the section
 
 In order to allow L1 expressions to model the semantics of Elixir, the 
 corresponding uninterpreted functions must be declared in SMT-LIB
@@ -279,17 +274,12 @@ directly with the built-in declared L0 functions:
 
 and it is similar for the remaining types.
 
-\textcolor{red}{TODO}
-
-Explicar cosas aun no cubiertas, como comparacion de valores de distinto tipo.
-También complicaciones como que no pudimos modelar asi and y or por el 
-cortocircuito.
+\textcolor{red}{TODO}: explain non covered things (comparison between types)
+and that we could not model 'and' and 'or' in this way because of short-circuit
 
 \subsection{Translation into L0}
 
-\textcolor{red}{TODO}
-
-General explanation
+\textcolor{red}{TODO}: general explanation
 
 We shall define two functions:
 
@@ -548,9 +538,7 @@ user-provided pre/post-condition pair specifications in terms of L1 expressions:
 
 \subsection{Term size modelling}
 
-\textcolor{red}{TODO}
-
-Intended to be used for reasoning about termination.
+\textcolor{red}{TODO}: intended to be used for reasoning about termination.
 
 We also provide the following axioms in order to reason about
 term sizes:
@@ -569,7 +557,7 @@ They are based on the types and will be useful for reasoning about termination.
 
 \section{Implementation}
 
-\textcolor{red}{TODO}
+\textcolor{red}{TODO}: draft
 
 Show examples in a separate section before this one if possible.
 
