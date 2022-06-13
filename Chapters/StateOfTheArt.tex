@@ -1,38 +1,91 @@
 \chapter{State of the Art}
 \label{cap:stateOfTheArt}
 
-\textcolor{red}{TODO}
+Our main goal is to provide a static verification mechanism to allow Elixir
+programmers to write formal specifications and prove the conformance of their 
+code in regard to these specifications. 
 
-Discuss the state of the Art regarding the topics of this research project. 
-You can cite the appearing references from the bibliography in different ways:
+In this section, we will discuss the current approaches and tools for that purpose
+in general, and then which are the current approaches to prove or disprove correctness
+in Elixir.
+
+\section{Program verification}
+
+A usual approach for program verification is to transform code and specifications into
+an intermediate representation, such as Boogie, and then a theorem prover
+tries to prove its verification conditions, where their validity implies the correctness
+under consideration \citep{Boogie2}.
+
+In general, a theorem prover may not be able to reach a required proof, although it may exist,
+and human intervention can be necessary in the form of interacting with an interface, transforming
+the code to be verified or adding information to help the prover [reference].
+
+\subsection{Dafny}
+
+Dafny is a programming language that provides features for program verification and 
+covers several programming paradigms, such as imperative, functional and \gls{oop} \citep{DafnyManual}. 
+It was created at Microsoft Research and is currently being developed with the support of Amazon.
+
+The following is an example to specify and verify the implementation of a function to return 
+the maximum of three integer numbers:
+
+\begin{verbatim}
+method max3(x: int, y: int, z: int) returns (m: int)
+  ensures m == x || m == y || m == z
+  ensures m >= x && m >= y && m >= y
+{
+  if x > y && x > z { return x; }
+  if y > z { return y; }
+  return z;
+}
+\end{verbatim}
+
+Although the above example may seem simple, Dafny can also handle more advanced topics such as recursion 
+and loops by means of induction and loop invariants respectively. Its verified code can be translated into 
+other programming languages, mainly C\#, to be executed. 
+
+Our project is greatly inspired by this system, although our aim is to embed program verification features 
+into an existing programming language instead of translate verified code into an executable version.
+
+\subsection{Intermediate representations for verification}
+
+\gls{ir}s tend to arise in compiler technologies, with goals like perform analyses, optimizations or 
+portability \citep{FormalizingLLVMIR}. A richer language can be translated into a simpler or more focused
+one, the \gls{ir}, which can also be the translation target for other languages.
+
+A known technology which provides a platform-independent \gls{ir} intended to be executed in 
+different platforms, and a toolchain to work with it, is LLVM \citep{LLVM}.
+
+Programming languages such as Java and Erlang also have as a compilation target a bytecode \gls{ir} 
+corresponding to their virtual machines, JVM and BEAM respectively. These are also compilation targets 
+for other programming languages such as Kotlin and Scala for the JVM and Elixir for the BEAM virtual
+machine. Also, WebAssembly is an \gls{ir} intended be executable at native speed in web browsers [reference].
+
+For building verification tools, we are interested on \gls{ir}s that are focused in capturing the 
+intended verification notions and are suitable to be transformed into input for a theorem prover.
+This last one will try to provide a proof for the verification.
+
+\textcolor{red}{TODO:} discutir algunas
 
 \begin{itemize}
-  \item With cite: \cite{programmingElixir}
-  \item With citep: \citep{programmingElixir}
-  \item With citet: \citet{programmingElixir}
+  \item Boogie
+  \item Why3 / WhyML
+  \item Viper
+  \item CAVI-ART
+  \item CHC (Constrained Horn Clauses)
+  \item Rule-based representation (COSTA group)
 \end{itemize}
 
-Multiple cites at the same time \citep{programmingElixir,masteringElixir,smtLibStandard}
+\subsection{SMT solvers}
 
-\begin{itemize}
-  \item Elixir
-  \item Propery-based testing: Proper, QuickCheck (excheck)
-  \item Erlang Verification Tool (Lars-Åke Freudlund)
-  \item \acrshort{smt} solvers: Z3, CVC4, MATHSAT, Yices...
-  \item Dafny
-  \item Verification \gls{ir}s:
-    \begin{itemize}
-      \item Boogie
-      \item Why3 / WhyML
-      \item Viper
-      \item CAVI-ART
-      \item CHC (Constrained Horn Clauses)
-      \item Rule-based representation (COSTA group)
-    \end{itemize}
-  \item Other \gls{ir}s:
-    \begin{itemize}
-      \item LLVM
-      \item BEAM
-      \item WebAssembly
-    \end{itemize}
-\end{itemize}
+Z3, CVC4, MATHSAT, Yices... SMT-LIB
+
+\section{Correctness in Elixir}
+
+\subsection{Propery-based testing}
+
+Propery-based testing: Proper, QuickCheck (excheck)
+
+\subsection{Erlang Verification Tool}
+
+Erlang Verification Tool (Lars-Åke Freudlund)
