@@ -36,6 +36,10 @@
 \newcommand{\assertE}{\ensuremath{\textbf{assert}}}
 \newcommand{\assumeE}{\ensuremath{\textbf{assume}}}
 \newcommand{\unfoldE}{\ensuremath{\textbf{unfold}}}
+\newcommand{\caseE}{\ensuremath{\textbf{case}}}
+\newcommand{\whenE}{\ensuremath{\textbf{when}}}
+\newcommand{\ghostE}{\ensuremath{\textbf{ghost}}}
+\newcommand{\Wend}{\ensuremath{\textbf{end}}}
 \newcommand{\Exp}[1]{\ensuremath{\mathbf{Exp}^{#1}}}
 \newcommand{\Stm}{\ensuremath{\mathbf{Stm}}}
 \newcommand{\Spec}[1]{\ensuremath{\mathit{Spec}(#1)}}
@@ -43,6 +47,7 @@
 \newcommand{\Post}[1]{\ensuremath{\mathit{Post}(#1)}}
 \newcommand{\Body}[1]{\ensuremath{\mathit{Body}(#1)}}
 \newcommand{\UserSpec}[1]{\ensuremath{\mathit{UserSpec}(#1)}}
+\newcommand{\Pat}{\ensuremath{\mathbf{Pat}}}
 \newcommand{\whenUnsatW}{\ensuremath{\textbf{when-unsat}}}
 \newcommand{\whenUnsatE}[3]{\whenUnsatW~#1~\doW~#2~\elseW~#3}
 \newcommand{\declareConstE}[1]{\ensuremath{\textbf{declare-const}~#1}}
@@ -58,7 +63,9 @@
 \newcommand{\isnelist}[1]{\ensuremath{\mathit{is\mbox{-}nonempty\mbox{-}list}(#1)}}
 \newcommand{\istuple}[1]{\ensuremath{\mathit{is\mbox{-}tuple}(#1)}}
 \newcommand{\istau}[1]{\ensuremath{\mathit{is\mbox{-}\tau}(#1)}}
+\newcommand{\trEXP}[1]{\ensuremath{\mathit{trEXP}~\llbracket#1\rrbracket}}
 \newcommand{\trExp}[2]{\ensuremath{\mathit{trExp}~#1~\llbracket#2\rrbracket}}
 \newcommand{\trExps}[1]{\ensuremath{\mathit{trExp}~\llbracket#1\rrbracket}}
 \newcommand{\trStm}[1]{\ensuremath{\mathit{trStm}~\llbracket#1\rrbracket}}
+\newcommand{\trMatch}[2]{\ensuremath{\mathit{trMatch}~\llbracket#1\rrbracket}~\llbracket#2\rrbracket}
 \newcommand{\termSize}[1]{\ensuremath{\mathit{term\mbox{-}size}(#1)}}

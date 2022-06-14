@@ -560,10 +560,9 @@ term sizes:
 They are based on the types and will be useful for reasoning about termination.
 
 \section{Implementation}
+\label{ir:l1implementation}
 
-\textcolor{red}{TODO}: draft
-
-Show examples in a separate section before this one if possible.
+\textcolor{red}{TODO}: show examples in a separate section before this one if possible.
 
 We are going to explain our implementation in a schematic way in order to give its 
 main idea. 
@@ -603,20 +602,25 @@ end
 This translation relies on a state of tuple constructors that are declared on 
 demand, and we also provide a mechanism to indicate the context of the program 
 in order to report helpful error messages, but we have omitted such details in 
-order to simplify.
+order to simplify. 
+
+The tuple constructor state has to be managed carefully, because
+an SMT-LIB \verb|pop| command can remove definitions from the solver, created after 
+the previous \verb|push|, and this must be always reflected in the state to be 
+synchronized.
 
 Then, we also implement a function to translate Elixir \gls{ast} corresponding
-to L2 expressions into L0 code:
+to L2 statements into L0 code:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-@spec translate_l1_exp(L1Exp.ast) :: L0Exp.ast
+@spec translate_l1_stm(L1Stm.ast) :: L0Exp.ast
 \end{lstlisting}
 
 It also matches closely the formal version, as in this case for the 
 \verb|assert| statement:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-def translate_l1_exp([{:assert, _, [f]}]) do
+def translate_l1_stm([{:assert, _, [f]}]) do
   {term, term_sem} = translate_l1_exp(nil, f)
 
   quote do
@@ -640,8 +644,23 @@ to simplify the explanation.
 
 Finally, this allows to implement a public \gls{api} for the package which defines 
 the corresponding macros from the example [reference]. They translate the L1 \gls{dsl} 
-into L0 and evaluate it as in \ref{integ:l0implementation}.
+into L0 and evaluate it as in \ref{integ:l0implementation}. A verification function 
+for L1 statements can be implemented in terms of it as follows but, in contrast to the 
+one presented in \ref{integ:l0implementation}, our current implementation returns 
+verification error reports instead of raising an exception and stopping the whole 
+process:
 
-Note that our final implementation also introduces some strategies to improve its 
-performance. For example, instead of translating the whole L1 code into L0 and then 
-evaluate it, we can translate and evaluate each L1 statement one at a time.
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@spec verify_l1(Env.t(), L1Stm.ast()) :: [term()]
+def verify_l1(env, s) do
+  L0Exp.eval(
+    env,
+    fn -> Msg.evaluate_stm_context(s) end,
+    translate_l1_stm(s)
+  )
+end
+\end{lstlisting}
+
+Also, we have introduced some strategies to improve its performance. For example, 
+instead of translating the whole L1 code into L0 and then 
+evaluate it, we can translate and evaluate a sequence of L1 statements one at a time.
