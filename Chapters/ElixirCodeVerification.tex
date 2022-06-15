@@ -72,13 +72,13 @@ matches $P$. Its definition is as follows:
 Also, $\mathit{vars}(P)$ is a function to denote the $L1$ variable expressions that 
 appear in a pattern $P$.
 
-L2 expressions that are contained within the syntax of L1 are translated as they are, 
-but we generate an assertion to check if the expression is equal to itself. Otherwise,
-bad formed expressions at the top level that fail to verify may be ignored by the 
-process:
+L2 expressions that are contained within the syntax of L1 are translated as they
+are, but we generate a dummy assertion to check if the singleton tuple with this
+expression is a tuple. Otherwise, bad formed expressions (e.g. \verb|2 + true|)
+at the top level or in a sequence may be ignored by the verification process:
 
 \[
-\trEXP{e} = [(\assertE~e~\texttt{===}~e, e)]
+\trEXP{e} = [(\assertE~\mathit{is\mbox{-}tuple}(\{e\}), e)]
 \]
 
 Expressions of the form $P = E$ are translated into assertions that check whether the

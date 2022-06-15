@@ -6,3 +6,4 @@
 {"rule":"EN_A_VS_AN","sentence":"^\\QIn order to implement our system, we will require to be able to interact with an smt solver from Elixir.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere other involved types like \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q are defined similarly.\\E$"}
 {"rule":"PRE_AND_POST_NN","sentence":"^\\QHere the word overloaded means that there could be many pre/post-condition pairs for each function.\\E$"}
+{"rule":"POSSESSIVE_APOSTROPHE","sentence":"^\\QThe \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q built-in functions for lists allow us to respectively obtain the first and second components of a cons cell:\\E$"}

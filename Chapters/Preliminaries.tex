@@ -1,8 +1,8 @@
 \chapter{Preliminaries}
 \label{cap:preliminaries}
 
-This chapter introduces some required topics and tools that are a basis to
-our project.
+This chapter introduces some required topics and tools that are a basis to our
+project.
 
 On the one hand, Elixir is the programming language that is the verification
 subject of this document and, at the same time, the one in which our
@@ -14,31 +14,31 @@ theorem provers such as Z3.
 
 \section{Elixir}
 
-Elixir is a general-purpose programming language that runs on the Erlang
-Virtual Machine, where also the Erlang programming language runs [reference].
-Both of them share some features, like their actor-based concurrency model,
-and have a native capability to interoperate. Although Elixir is younger than
-Erlang, this has allowed the former to be part of an ecosystem which has been
-developed across more than three decades.
+Elixir is a general-purpose programming language that runs on the Erlang Virtual
+Machine, also called BEAM, where also programs written in the Erlang language
+run. Both of them share some features, like their actor-based concurrency model,
+and have a native capability to interoperate between them. Although Elixir is
+younger than Erlang, this has allowed the former to be part of an ecosystem
+which has been developed across more than three decades.
 
-We have chosen such a programming language for this research because,
-first, it is a modern programming language ready to be used in the
-industry [reference]. Second, it has the unusual property in formal 
-verification to be dynamically typed, but its functional programming principles
-will make it easier to reason about [reference]. Finally, its metaprogramming
-capabilities will allow us to extend it according to our needs without requiring
-to modify its compiler.
+We have chosen such a programming language for this research because, first, it
+is a modern programming language ready to be used in the industry.  Second, it
+has the unusual property in formal verification to be dynamically typed, but its
+functional programming principles will make it easier to reason about. Finally,
+its metaprogramming capabilities will allow us to extend it according to our
+needs without requiring us to modify its compiler.
 
 \subsection{General description}
 
 In this section, we introduce the basic concepts and constructs of sequential
 programming in Elixir. Our aim is to show only the behavior of the language
-subset that is studied later in this document for its verification, and also
-its metaprogramming mechanism based on macros, on top of which our proposed
+subset that is studied later in this document for its verification, and also its
+metaprogramming mechanism based on macros, on top of which our proposed
 verification system has been implemented.
 
-The following examples will be exposed in the Elixir \gls{repl}, 
-called \verb|iex|, where \verb|iex>| represents its default prompt:
+The following examples will be shown in the Elixir \gls{repl}, called
+\verb|iex|, where \verb|iex>| represents its default prompt and an introduced
+expression is followed by the result such that it evaluates:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> "Hello world"
@@ -47,8 +47,8 @@ iex> "Hello world"
 
 \subsubsection{Value types}
 
-As usual, one of the core value types in Elixir is the \verb|integer|, for
-which arithmetic operators behave as expected:
+As usual, one of the core value types in Elixir is \verb|integer|, for which
+arithmetic operators behave as expected:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> (2 + 2) * 5
@@ -59,12 +59,12 @@ iex> 1 / 0
 ** (ArithmeticError)
 \end{lstlisting}
 
-The \verb|boolean| value type is also at its core, but its operators have some
-worth to mention semantics when involving non-\verb|boolean| types, and also 
+The \verb|boolean| value type is also at its core, but it is worth mentioning
+the semantics of its operators when involving non-\verb|boolean| types, and also
 with respect to short-circuit evaluation:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-iex> true and 2 # Evaluates into the second argument
+iex> true and 2 # Evaluates to the second argument
 2
 iex> 2 and true # Requires the first one to be a boolean
 ** (BadBooleanError)
@@ -73,7 +73,7 @@ false
 \end{lstlisting}
 
 Some built-in Elixir functions allow checking if a given value is of a given
-type in terms of a \verb|boolean| result:
+type by returning a \verb|boolean| result:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> is_boolean(true)
@@ -100,11 +100,19 @@ iex> 2 < true
 true
 \end{lstlisting}
 
+The \verb|===|, \verb|!==|, \verb|and| and \verb|or| operators are the so-called
+\textit{strict} version of their respective counterparts \verb|==|, \verb|!=|,
+\verb|&&| and \verb+||+, but we are not going to deal with them for the moment.
+
+Also, \verb|boolean| values are in fact a special case for \verb|atom| values,
+but we are not going to deal with that value type for the moment in this
+project.
+
 \subsubsection{Collection types}
 
 One of the simplest built-in collection types in Elixir is the inductive 
-\verb|list|, which consists of nested cons cells (i.e. pairs) and can be
-written in different ways:
+\verb|list|, which consists of nested cons cells (i.e. pairs) and can be written
+in different ways:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> [] # The empty list 
@@ -113,25 +121,26 @@ iex> [3 | []] # A cons cell
 [3]
 iex> [1 | [2 | [3 | []]]] # Nested cons cells
 [1, 2, 3]
-iex> [1, 2, 3] # Syntax sugar
+iex> [1, 2, 3] # Syntactic sugar
 [1, 2, 3]
-iex> [1, 2 | [3]] # Syntax mix
+iex> [1, 2 | [3]] # Mixing sugared and desugared syntax
 [1, 2, 3]
 \end{lstlisting}
 
-It is not required for the \verb|list| elements to be of the same type, and
-improper lists (i.e. those that do not have an empty list as the second element
-in the deepest cons cell) are also allowed \citep{ElixirDocs}:
+It is not required for the \verb|list| elements to be of the same type (i.e.
+heterogeneous lists are allowed), and improper lists (i.e. those that do not
+have an empty list as the second element in the deepest cons cell) are also
+allowed \citep{ElixirDocs}:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-iex> [1, 2, false]
+iex> [1, 2, false] # An heterogeneous list
 [1, 2, false]
-iex> [1 | [2 | 3]] 
+iex> [1 | [2 | 3]] # An improper list
 [1, 2 | 3]
 \end{lstlisting}
 
-Functions in Elixir use to be referred by its name and arity. The \verb|hd/1|
-and \verb|tl/1| built-in functions for lists allow to respectively obtain the
+Functions in Elixir are commonly referred by its name and arity. The \verb|hd/1|
+and \verb|tl/1| built-in functions for lists allow us to respectively obtain the
 first and second components of a cons cell:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
@@ -150,11 +159,11 @@ the following code to apply the \verb|is_list/1| function to several provided
 lists and return the conjunction of its results:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-iex> Enum.all?(                 # All
+iex> Enum.all?(                 # Are all
   [[], [1, 2], [1, 2 | false]], # of these
-  &is_list/1                    # are lists
+  &is_list/1                    # lists?
 )
-true
+true                            # Yes
 \end{lstlisting}
 
 Another core collection type in Elixir is the \verb|tuple|, which also does not
@@ -167,9 +176,9 @@ iex> {1, false, {3, 4}, []}
 {1, false, {3, 4}, []}
 \end{lstlisting}
 
-They have a size, which can be retrieved with the \verb|tuple_size/1| function,
-and each \verb|tuple| component can also be retrieved with the \verb|elem/2|
-function by specifying its position with a zero-based index:
+Tuples have a size, which can be retrieved with the \verb|tuple_size/1|
+function, and each \verb|tuple| component can also be retrieved with the
+\verb|elem/2| function by specifying its position with a zero-based index:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> tuple_size({1, 2, 3})
@@ -183,16 +192,18 @@ iex> elem({1, 2, 3}, 3)
 \end{lstlisting}
 
 In this case, the \verb|tuple| type membership checking function is
-\verb|is_tuple/1|.
+\verb|is_tuple/1|. Usually, the components of a collection such as a \verb|list|
+or a \verb|tuple| are obtained by means of pattern matching, that is explained
+in the following section.
 
 \subsubsection{Blocks, pattern matching and control flow}
 
-Elixir statements can be evaluated sequentially by gathering them inside a
+Elixir expressions can be evaluated sequentially by gathering them inside a
 \verb|block|, delimited by a semicolon or a line break:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> 2 + 1;5 === 5;false
-false # Evaluates to the last statement value
+false # Evaluates to the result of its last expressions
 iex> (
         2 + 1
         5 === 5
@@ -201,19 +212,18 @@ iex> (
 false
 \end{lstlisting}
 
-The \verb|match| operator \verb|=| allows binding values to variable names.
-Note that these bindings are not locally scoped inside blocks and, in 
-contrast to Erlang, variable bindings can be overridden:
+The expressions inside a \verb|block| that are not the last one tend to perform
+side effects, such as binding values to variable names with the \verb|match|
+operator \verb|=|. Note that these bindings are not locally scoped inside
+\verb|block|s and, in contrast to Erlang, variable bindings can be overridden:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-iex> x = 2
-2
-iex> y = 2
-2
 iex> (z = 2, 4)
 4
-iex> z = 2
+iex> z
 2
+iex> z = 3
+3
 \end{lstlisting}
 
 This operator also allows performing pattern matching, which destructures 
@@ -224,18 +234,22 @@ dealing with collection value types:
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> {x, 3} = {2, 3}
 {2, 3}
+iex> x
+2
 iex> {x, 3} = {2, 4}
 ** (MatchError)
 iex> [h | t = [_, 3]] = [1, 2, 3] # A nested match
 [1, 2, 3]
+iex> h
+1
 iex> t
 [2, 3]
 \end{lstlisting}
 
 Regarding control flow, although Elixir provides usual constructs such as 
-\verb|if|, one of the most general ones is \verb|case|. It Evaluates to 
-the first branch that matches the pattern and is compliant with a possible
-guard expression, and this is the only branch that is evaluated:
+\verb|if|, one of the most general ones is \verb|case|. It is evaluated to the
+first branch that matches the pattern and is compliant with a guard expression
+if specified, and this is the only branch in the \verb|case| that is evaluated:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> case {1, 2, 3} do 
@@ -257,9 +271,9 @@ negation, conjunction and disjunction, and type checking for values.
 
 \subsubsection{Function definitions}
 
-A named function, identified by its name and arity, can be defined inside 
-a \verb|module| with different body definitions and different matching for
-its arguments:
+A named function, identified by its name and arity, can be defined inside a
+\verb|module| with different body definitions and different patterns and guards
+for its arguments:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defmodule Example do 
@@ -273,25 +287,27 @@ defmodule Example do
 end
 \end{lstlisting}
 
-The rules for which one is applied are the same as in \verb|case| expressions,
-so function definitions can also express control flow \citep{programmingElixir}.
+The rules that determine which clause is applied is are the same as in
+\verb|case| expressions, so function definitions can also express control flow
+\citep{programmingElixir}.
 
 \subsubsection{Type specifications}
 \label{prelim:typespecs}
 
 Although Elixir is dynamically typed, it has a system to annotate the intended
-types for functions and a tool to perform a static analysis on them. We will
-use these specifications together with function identifiers to outline the ideas
-behind our implementations along this document.
+types for functions and a tool to perform a static analysis on them, which is 
+called dialyzer \citep{Dialyzer}. We will use these specifications together with
+function identifiers to outline the ideas behind our implementations along this
+document.
 
-A function type specification can be defined as 
+A function type specification can be defined as follows: 
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec function_name(type_1, type_2, ... type_n) :: return_type
 \end{lstlisting}
 
-and types can be defined by means of composing other types with constructs such
-as the \verb+|+ operator:
+Types can be defined by means of composing other types with constructs such as
+the \verb+|+ operator, which denotes the union of types:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @type tuple_or_nat :: tuple | non_neg_integer
@@ -299,26 +315,27 @@ as the \verb+|+ operator:
 
 \subsection{Macros}
 
-Because of its metaprogramming capabilities based on macros, Elixir is a suitable
-language for implementing \gls{dsl}s [reference]. This will allow us to extend 
-it without requiring to leave the language itself.
+Because of its metaprogramming capabilities based on macros, Elixir is a
+suitable language for implementing \gls{dsl}s \citep{metaprogrammingElixir}.
+This will allow us to extend it without requiring us to modify the Elixir
+compiler or implement a parser.
 
-The main construct for this purpose is \verb|defmacro| which, as a curiosity,
-is declared in the \verb|Kernel| module of Elixir in terms of itself due to 
-a bootstrapping process:
+The main construct for this purpose is \verb|defmacro| which, as a curiosity, is
+declared in the \verb|Kernel| module of Elixir in terms of itself due to a
+bootstrapping process:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
   defmacro defmacro(call, expr) do
     ...
 \end{lstlisting}
 
-The argument values for a macro are unevaluated Elixir \gls{ast}, and its return 
-value must also be valid Elixir \gls{ast} that will replace the macro invocation 
-at compile-time. The resulting code may also contain other macros that will be
+The argument values for a macro are Elixir \gls{ast}s, and its return value must
+also be a valid Elixir \gls{ast} that will replace the macro invocation at
+compile-time. The resulting code may also contain other macro calls that will be
 expanded recursively.
 
-By using Elixir type specifications, its \gls{ast} type is defined in the 
-\verb|Macro| module as
+By using type specifications, the \gls{ast} type for Elixir expressions is
+defined in the \verb|Macro| module as
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @type ast ::
@@ -332,8 +349,8 @@ By using Elixir type specifications, its \gls{ast} type is defined in the
 \end{lstlisting}
 
 where \verb|ast_expr| represents a function invocation when the first component
-is the function name, and the third one its arguments. We can obtain the \gls{ast}
-corresponding to an Elixir expression with the \verb|quote/1| macro:
+is the function name, and the third one its arguments. We can obtain the
+\gls{ast} corresponding to an Elixir expression with the \verb|quote/1| macro:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> quote do 
@@ -342,9 +359,9 @@ iex> quote do
 {:+, [context: Elixir, import: Kernel], [1, 2]}
 \end{lstlisting}
 
-and it is the main construct to transform the input \gls{ast} into new \gls{ast}
-when defining a macro, together with \verb|unquote/1| to interpolate expressions
-inside a quoted one:
+\verb|quote/1| is the main construct to transform the input \gls{ast} into new
+\gls{ast} when defining a macro, together with \verb|unquote/1| to interpolate
+expressions inside a quoted one:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defmacro sum_into_product({:+, _, [x, y]}) do
@@ -354,41 +371,43 @@ defmacro sum_into_product({:+, _, [x, y]}) do
 end
 \end{lstlisting}
 
-Elixir also offers several constructs to deal with an advanced usage 
-of macros, such as \verb|unquote_splicing/1| to interpolate an \gls{ast} list as 
-the arguments of a function invocation, and \verb|escape/1| to introduce
-\gls{ast} as it is (i.e. allows to obtain the \gls{ast} of \gls{ast} data):
+Elixir also offers several advanced constructs to deal with macros, such as
+\verb|unquote_splicing/1| to interpolate an \gls{ast} list as the arguments of a
+function invocation, and \verb|escape/1| to escape \gls{ast} data (e.g. it
+allows to introduce some given \gls{ast} as data instead of as code in a macro
+definition):
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> quote do
         hello(unquote_splicing([2, 3]))
      end
 {:hello, [], [2, 3]}
-iex> quote(do: quote(do: 2 + 2))
-{
-  :quote, 
-  [context: Elixir],
-  [[do: {:+, [context: Elixir, import: Kernel], [2, 2]}]]
-}
-iex> Macro.escape(quote(do: 2 + 2))
+iex> ast = quote(do: 2 + 2)
+iex> quote do
+        unquote(ast)
+     end
+{:+, [context: Elixir, import: Kernel], [2, 2]}
+iex> quote do 
+        unquote(Macro.escape(ast))
+     end
 {:{}, [], [:+, [context: Elixir, import: Kernel], [2, 2]]}
 \end{lstlisting}
 
 \subsection{Interoperability}
 
 Elixir offers several ways to interoperate with processes or libraries that are
-external to the Erlang Virtual Machine, apart from conventional \gls{io}. We are
-interested in these features due to the integration of an \acrshort{smt} solver
-in Elixir, which will surely be an external process.
+external to the Erlang Virtual Machine, apart from conventional \gls{io} based
+mechanisms. We are interested in these features due to the integration of an
+\acrshort{smt} solver in Elixir, which will surely be an external process.
 
-One of them is to use \gls{nif}s, which allow loading and calling libraries
-implemented in other programming languages such as C. When using this system,
-it is important to know that a crash in a \gls{nif} brings the Erlang Virtual 
+One of these ways is \gls{nif}s, which allows loading and calling libraries
+implemented in other programming languages such as C. When using this system, it
+is important to know that a crash in a \gls{nif} brings the Erlang Virtual 
 Machine down too \citep{ErlangDocs}.
 
-A more safe approach is to launch an external process managed by the Erlang
-Virtual Machine and communicate with it by means of message passing, which in 
-Elixir is provided as a mechanism called \textit{ports}:
+A safer approach is to launch an external process managed by the Erlang Virtual
+Machine and communicate with it by means of message passing, which in Elixir is
+provided by a mechanism called \textit{ports}:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 port = Port.open({:spawn, "cat"}, [:binary])
@@ -399,19 +418,22 @@ iex> flush()
 send(port, {self(), :close})
 \end{lstlisting}
 
-A known drawback of this other mechanism is that, if the Erlang Virtual 
-Machine crashes after having launched a long-running process, then its \verb|stdin| 
-and \verb|stdout| channels will be closed, but it won't be automatically terminated.
-This depends on how the specific process behaves when its communication channels are
-closed \citep{ElixirDocs}.
+The underlying implementation makes the communication through \verb|stdin| and 
+\verb|stdout|, but this is abstracted under the message passing \gls{api}.
+
+A known drawback of this mechanism is that, if the Erlang Virtual Machine
+crashes after having launched a long-running process, then its \verb|stdin| and
+\verb|stdout| channels will be closed, but it won't be automatically terminated.
+This depends on how the specific process behaves when its communication channels
+are closed \citep{ElixirDocs}.
 
 \section{Satisfiability Modulo Theories}
 
-The \gls{smt} problem consists of checking whether
-a given logical formula is satisfiable within a specific theory
-\citep{smtLibStandard}. This allows to define theories in which the \gls{smt} problem
-is decidable and, moreover, to design efficient algorithms specialized in 
-solving this problem for a theory.
+The \gls{smt} problem consists in checking whether a given logical formula is
+satisfiable within a specific theory \citep{smtLibStandard}. This allows a 
+theorem prover to define theories in which the \gls{smt} problem is decidable
+and, moreover, to design efficient algorithms specialized in solving this
+problem for a theory.
 
 \textcolor{red}{TODO}: reference and comment a theory with smt decidable and some 
 efficient algorithm.
@@ -420,9 +442,9 @@ efficient algorithm.
 \label{prelim:smtlib}
 
 SMT-LIB is an initiative which tries to provide a common interface to interact
-with \acrshort{smt} solvers. It defines a solver-agnostic standard language
-with a Lisp-like syntax to both configure a solver, manage it, encode an
-\gls{smt} problem instance and query for solutions.
+with \acrshort{smt} solvers. It defines a solver-agnostic standard language with
+a Lisp-like syntax to configure a solver, manage it, encode an \gls{smt} problem
+instance and query for solutions.
 
 \textcolor{red}{TODO}: general description, many sorted and references. 
 Show the subset of commands and responses that we are going to use.
@@ -448,122 +470,28 @@ Show the subset of commands and responses that we are going to use.
 \end{array}
 \]
 
-\textcolor{red}{TODO}: show an example like the following. 
-Maybe this one is too long (appendix?).
-
-\begin{verbatim}
-; The propositional variable 'pi_j' means that the node i appears in 
-; the path position j, where nodes are labeled as natural numbers 
-; starting from 0.
-(declare-const p0_0 Bool)
-(declare-const p0_1 Bool)
-(declare-const p0_2 Bool)
-(declare-const p0_3 Bool)
-(declare-const p1_0 Bool)
-(declare-const p1_1 Bool)
-(declare-const p1_2 Bool)
-(declare-const p1_3 Bool)
-(declare-const p2_0 Bool)
-(declare-const p2_1 Bool)
-(declare-const p2_2 Bool)
-(declare-const p2_3 Bool)
-(declare-const p3_0 Bool)
-(declare-const p3_1 Bool)
-(declare-const p3_2 Bool)
-(declare-const p3_3 Bool)
-
-; Every node should appear in at least one position.
-(assert (or p0_0 p0_1 p0_2 p0_3))
-(assert (or p1_0 p1_1 p1_2 p1_3))
-(assert (or p2_0 p2_1 p2_2 p2_3))
-(assert (or p3_0 p3_1 p3_2 p3_3))
-
-; Two different nodes do not appear in the same path position.
-(assert (not (and p0_0 p1_0)))
-(assert (not (and p0_1 p1_1)))
-(assert (not (and p0_2 p1_2)))
-(assert (not (and p0_3 p1_3)))
-(assert (not (and p0_0 p2_0)))
-(assert (not (and p0_1 p2_1)))
-(assert (not (and p0_2 p2_2)))
-(assert (not (and p0_3 p2_3)))
-(assert (not (and p0_0 p3_0)))
-(assert (not (and p0_1 p3_1)))
-(assert (not (and p0_2 p3_2)))
-(assert (not (and p0_3 p3_3)))
-(assert (not (and p1_0 p0_0)))
-(assert (not (and p1_1 p0_1)))
-(assert (not (and p1_2 p0_2)))
-(assert (not (and p1_3 p0_3)))
-(assert (not (and p1_0 p2_0)))
-(assert (not (and p1_1 p2_1)))
-(assert (not (and p1_2 p2_2)))
-(assert (not (and p1_3 p2_3)))
-(assert (not (and p1_0 p3_0)))
-(assert (not (and p1_1 p3_1)))
-(assert (not (and p1_2 p3_2)))
-(assert (not (and p1_3 p3_3)))
-(assert (not (and p2_0 p0_0)))
-(assert (not (and p2_1 p0_1)))
-(assert (not (and p2_2 p0_2)))
-(assert (not (and p2_3 p0_3)))
-(assert (not (and p2_0 p1_0)))
-(assert (not (and p2_1 p1_1)))
-(assert (not (and p2_2 p1_2)))
-(assert (not (and p2_3 p1_3)))
-(assert (not (and p2_0 p3_0)))
-(assert (not (and p2_1 p3_1)))
-(assert (not (and p2_2 p3_2)))
-(assert (not (and p2_3 p3_3)))
-(assert (not (and p3_0 p0_0)))
-(assert (not (and p3_1 p0_1)))
-(assert (not (and p3_2 p0_2)))
-(assert (not (and p3_3 p0_3)))
-(assert (not (and p3_0 p1_0)))
-(assert (not (and p3_1 p1_1)))
-(assert (not (and p3_2 p1_2)))
-(assert (not (and p3_3 p1_3)))
-(assert (not (and p3_0 p2_0)))
-(assert (not (and p3_1 p2_1)))
-(assert (not (and p3_2 p2_2)))
-(assert (not (and p3_3 p2_3)))
-
-; If two nodes are not adjacent, then they do not appear
-; consecutively in the path.
-(assert (=> p1_0 (not p3_1)))
-(assert (=> p1_1 (not p3_2)))
-(assert (=> p1_2 (not p3_3)))
-(assert (=> p2_0 (not p3_1)))
-(assert (=> p2_1 (not p3_2)))
-(assert (=> p2_2 (not p3_3)))
-(assert (=> p3_0 (not p1_1)))
-(assert (=> p3_1 (not p1_2)))
-(assert (=> p3_2 (not p1_3)))
-(assert (=> p3_0 (not p2_1)))
-(assert (=> p3_1 (not p2_2)))
-(assert (=> p3_2 (not p2_3)))
-
-(check-sat)
-\end{verbatim}
+\textcolor{red}{TODO}: the example proposed by Manuel
 
 \subsection{Z3}
 
-One of the \acrshort{smt} solvers that implements the SMT-LIB standard is the
-Z3 theorem prover from Microsoft Research.
+One of the \acrshort{smt} solvers that implements the SMT-LIB standard is the Z3
+theorem prover from Microsoft Research.
 
 \textcolor{red}{TODO}: reference, show its usage with -in and say why we have
 chosen it and why we only communicate with it by means of SMT-LIB.
 
 Note that there may exist subtle non-compliances when a solver implements the
 SMT-LIB standard. For example, we have found that Z3 does not include the
-surrounding double-quotes when it prints back the provided string literal,
-which is the specified behavior in the standard.
+surrounding double-quotes when it prints back the provided string literal, which
+is the specified behavior in the standard.
 
-This may add confusion because the \verb|echo| command is the only one whose
+This may lead to confusion because the \verb|echo| command is the only one whose
 response is a string literal and, as this is not the case for Z3, there are 
 corner cases in which a command response can be confused with a printed string
 intended to delimit command responses, which is one of the proposed usages for
 \verb|echo| in \cite{smtLibStandard}:
+
+\textcolor{red}{TODO}: clarify why this affects us
 
 \begin{verbatim}
 $ z3 -in <<<`(check-sat) (echo "sat")'

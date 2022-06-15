@@ -34,3 +34,9 @@ unevaluated
 non-compliances
 toolchain
 bytecode
+ERlang
+AnaLYZer
+DIscrepancy
+DIALYZER
+dialyzer
+Metaprogramming
