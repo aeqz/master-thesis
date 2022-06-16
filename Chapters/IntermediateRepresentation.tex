@@ -580,23 +580,79 @@ addressed in future work.
 \section{Implementation}
 \label{ir:l1implementation}
 
-\textcolor{red}{TODO}: show examples in a separate section before this one if possible.
+In this section, we present our implementation for the L2 \gls{ir} in Elixir.
 
-We are going to explain our implementation in a schematic way in order to give its 
-main idea. 
+\subsection{Overview}
+\label{ir:dslexample}
 
-First, we implement a function to translate Elixir \gls{ast} corresponding
-to L1 expressions (i.e. its \gls{dsl}), together with an assumption in terms of L0, 
-into the term that it represents and L0 code (i.e. also its \gls{dsl}) that models 
-its semantics:
+We have implemented a \gls{dsl} in Elixir to code and verify programs written in
+the L2 \gls{ir}. The \verb|with_local_env/2| macro provides a default fresh
+connection with Z3 and allows other configurations, such as a function to listen
+every verification error report when verifying the given code.
+
+Here are some examples that succeed to verify according to the Elixir behavior 
+explained in \ref{prelim:elixir}:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+import Boogiex
+
+with_local_env(
+  on_error: &IO.inspect/1
+) do
+  assert 4 - 2 === 6 - 4
+  assert (false or 2) === 2
+  assert 3 > 2 and 1 <= 1
+  assert elem({1, 2, 3}, 0) === 1
+  assert [1 | [2 | [3 | []]]] === [1, 2, 3]
+  assert true or true + true
+
+  havoc x
+  assert x === x
+  assert not (x !== x)
+
+  block do
+    assume x === 2
+    assert is_integer(x), "This should not fail"
+  end
+
+  assert is_integer(x), "This should fail"
+
+  havoc a
+  havoc b
+  havoc c
+
+  assume is_integer(a) and is_integer(b)
+  assume is_integer(a) and is_integer(b) and is_integer(c)
+
+  assume a === b
+  assume b === c
+  assert a === c
+
+  assert false, "This should fail"
+end
+\end{lstlisting}
+
+The package also exposes the corresponding translation functions between
+\gls{dsl}s for implementing other tools on top of them.
+
+\subsection{Details}
+\label{ir:details}
+
+We are going to explain our implementation in a schematic way in order to give
+its main idea. 
+
+First, we implement a function to translate Elixir \gls{ast} corresponding to L1
+expressions (i.e. its \gls{dsl}), together with an assumption in terms of L0, 
+into the term that it represents and L0 code (i.e. also its \gls{dsl}) that
+models its semantics:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec translate_l1_exp(L0Exp.ast, L1Exp.ast) 
   :: {L0Exp.ast, L0Exp.ast}
 \end{lstlisting}
 
-Its definition syntax matches pretty closely the formal version, as in this 
-case for nonempty lists:
+Its definition syntax matches pretty closely the formal version, as in this case
+for nonempty lists:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 def translate_l1_exp(assumption, [{:|, _, [h, t]}]) do
@@ -622,9 +678,9 @@ demand, and we also provide a mechanism to indicate the context of the program
 in order to report helpful error messages, but we have omitted such details in 
 order to simplify. 
 
-The tuple constructor state has to be managed carefully, because
-an SMT-LIB \verb|pop| command can remove definitions from the solver, created after 
-the previous \verb|push|, and this must be always reflected in the state to be 
+The tuple constructor state has to be managed carefully, because an SMT-LIB
+\verb|pop| command can remove definitions from the solver, created after the
+previous \verb|push|, and this must be always reflected in our state to be 
 synchronized.
 
 Then, we also implement a function to translate Elixir \gls{ast} corresponding
@@ -656,13 +712,13 @@ def translate_l1_stm([{:assert, _, [f]}]) do
 end
 \end{lstlisting}
 
-Finally, this allows to implement a public \gls{api} for the package which defines 
-the corresponding macros from the example [reference]. They translate the L1 \gls{dsl} 
-into L0 and evaluate it as in \ref{integ:l0implementation}. A verification function 
-for L1 statements can be implemented in terms of it as follows but, in contrast to the 
-one presented in \ref{integ:l0implementation}, our current implementation returns 
-verification error reports instead of raising an exception and stopping the whole 
-process:
+Finally, this allows us to implement a public \gls{api} for the package which
+defines the corresponding macros from the example at \ref{ir:dslexample}. They
+translate the L1 \gls{dsl} into L0 and evaluate it as in
+\ref{integ:l0implementation}. A verification function for L1 statements can be
+implemented in terms of it as follows but, in contrast to the one presented in
+\ref{integ:l0implementation}, our current implementation returns verification
+error reports instead of raising an exception and stopping the whole process:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec verify_l1(Env.t(), L1Stm.ast()) :: [term()]
@@ -675,6 +731,6 @@ def verify_l1(env, s) do
 end
 \end{lstlisting}
 
-Also, we have introduced some strategies to improve its performance. For example, 
-instead of translating the whole L1 code into L0 and then 
-evaluate it, we can translate and evaluate a sequence of L1 statements one at a time.
+Also, we have introduced some strategies to improve its performance. For
+example, instead of translating the whole L1 code into L0 and then evaluate it,
+we can translate and evaluate a sequence of L1 statements one at a time.
