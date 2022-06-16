@@ -7,3 +7,16 @@
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere other involved types like \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q are defined similarly.\\E$"}
 {"rule":"PRE_AND_POST_NN","sentence":"^\\QHere the word overloaded means that there could be many pre/post-condition pairs for each function.\\E$"}
 {"rule":"POSSESSIVE_APOSTROPHE","sentence":"^\\QThe \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q built-in functions for lists allow us to respectively obtain the first and second components of a cons cell:\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QIn this chapter, we develop an \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q for verification that is intended to be particularly suitable for languages like Elixir.\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QWhen it comes to assign a meaning to L1 statements and expressions, as this is an \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, we translate them into L0 expressions to verify them.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is the type of the literal, which can be determined at compile time since it is a literal, and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is the constant in the underlying logic represented by that literal.\\E$"}
+{"rule":"PRE_AND_POST_NN","sentence":"^\\QThen, for each pre/post-condition pair of the specification of the function being applied, we generate code that checks whether the precondition holds and, in case it does, we assert both the precondition and postcondition.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qand it will be extended if we model other numeric types such as \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qand it in the same ways for \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qand it is also similar for \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qand it is similar for \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qand it is similar for the remaining types.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere other involved types like \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q are defined similarly, many of them as an alias to built-in Elixir value types.\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QIn practice, this task will be delegated to an smt solver as if it were a black box that can solve the problem.\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QThe \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q expression corresponds to an \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q in SMT-LIB:\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QAssuming the defined macros to be in scope, and a \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q variable that represents a fresh connection with an smt solver and has the \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q sort already defined, this would be a simple example of its usage:\\E$"}
