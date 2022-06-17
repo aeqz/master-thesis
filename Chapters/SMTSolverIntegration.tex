@@ -28,16 +28,16 @@ can be written in Elixir as follows:
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 import SmtLib
 
-run do
+with_local_conn do
   declare_const x: Int,
                 y: Int
 
-  assert !( (:x + 3 <= :y + 3 ) ~> ( :x <= :y ))
-  check_sat
+  assert !((:x + 3 <= :y + 3) ~> (:x <= :y))
+  check_sat |> IO.inspect()
 end
 \end{lstlisting}
 
-which evaluates to \verb|[:unsat]|, proving that $$x + 3
+which prints to \verb|{:ok, :unsat}|, proving that $$x + 3
 \leq y + 3 \Rightarrow x \leq y$$
 
 We provide a \verb|run| macro that evaluates the given \gls{dsl} block by
@@ -307,9 +307,9 @@ The \verb|local| expression surrounds the evaluation in between \verb|pop| and
 defmacro eval(conn, {:local, _, [e]}) do
   quote do
     conn = unquote(conn)
-    {_, :ok} = run(conn, push)
+    :ok = push conn
     eval conn, unquote(e)
-    {_, :ok} = run(conn, pop)
+    :ok = pop conn
   end
 end
 \end{lstlisting}
@@ -320,7 +320,7 @@ The \verb|add| expression corresponds to an \verb|assert| in SMT-LIB:
 defmacro eval(conn, {:add, _, [f]}) do
   quote do
     conn = unquote(conn)
-    {_, :ok} = run(conn, assert(unquote(f)))
+    :ok = assert conn, unquote(f)
   end
 end
 \end{lstlisting}
@@ -332,8 +332,7 @@ Similarly, the \verb|declare-const| expression corresponds to a
 defmacro eval(conn, {:declare_const, _, [x]}) do
   quote do
     conn = unquote(conn)
-    {_, :ok} = 
-      run(conn, declare_const([{unquote(x), Term}]))
+    :ok = declare_const conn, [{unquote(x), Term}]
   end
 end
 \end{lstlisting}
@@ -347,10 +346,10 @@ defmacro eval(
 ) do
   quote do
     conn = unquote(conn)
-    {_, :ok} = run(conn, push)
+    :ok = push conn
     eval conn, unquote(e1)
-    {_, {:ok, result}} = run(conn, check_sat)
-    {_, :ok} = run(conn, pop)
+    {:ok, result} = check_sat conn
+    :ok = pop conn
 
     case result do
       :unsat -> eval conn, unquote(e2)
