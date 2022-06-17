@@ -228,9 +228,9 @@ iex> z = 3
 \end{lstlisting}
 
 This operator also allows performing pattern matching, which destructures 
-expressions according to patterns in order to check for a given shape and 
-bind subexpressions to variable names. They are particularly useful for 
-dealing with collection value types:
+expressions according to patterns in order to check for a given shape and bind
+subexpressions to variable names. They are particularly useful for dealing with
+collection value types:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> {x, 3} = {2, 3}
@@ -434,10 +434,16 @@ The \gls{smt} problem consists in checking whether a given logical formula is
 satisfiable within a specific theory \citep{smtLibStandard}. This allows a 
 theorem prover to define theories in which the \gls{smt} problem is decidable
 and, moreover, to design efficient algorithms specialized in solving this
-problem for a theory.
+problem for a theory or a set of them.
 
-\textcolor{red}{TODO}: reference and comment a theory with smt decidable and some 
-efficient algorithm.
+An example of a theory is that of linear integer arithmetic, which restricts the
+allowed functions, predicates and constants to be from the signature $\{=, +,
+\leq, 0, 1\}$ with the usual axioms for equality, order and addition.
+
+The \gls{smt} problem is decidable for quantifier free fragments of an arbitrary
+theory $\mathcal{T}$ by an algorithm called DPLL($\mathcal{T}$) that combines a
+decision procedure for that specific theory with an algorithm to solve the
+\gls{sat} problem, such as CDCL. 
 
 \subsection{SMT-LIB}
 \label{prelim:smtlib}
@@ -447,20 +453,30 @@ with \acrshort{smt} solvers. It defines a solver-agnostic standard language with
 a Lisp-like syntax to configure a solver, manage it, encode an \gls{smt} problem
 instance and query for solutions.
 
-\textcolor{red}{TODO}: general description, many sorted and references. 
-Show the subset of commands and responses that we are going to use.
+The terms and formulas in this language correspond to a sorted(i.e. typed) 
+version of first-order logic \citep{smtLibStandard}, and this is a subset 
+of the syntax of allowed commands that we are going to use:
 
 \[
 \begin{array}{rcll}
 \langle\textit{ command }\rangle & ::= & \texttt{( assert } \langle\textit{ term }\rangle\texttt{ ) }\\
-& | & \texttt{( check-sat )}\\
 & | & \texttt{( pop } \langle\textit{ numeral }\rangle \texttt{ ) }\\
 & | & \texttt{( push } \langle\textit{ numeral }\rangle \texttt{ ) }\\
+& | & \texttt{( check-sat )}\\
 & | & \texttt{( declare-sort } \langle\textit{ symbol }\rangle~\langle\textit{ numeral }\rangle\texttt{ ) }\\
 & | & \texttt{( declare-const } \langle\textit{ symbol }\rangle~\langle\textit{ sort }\rangle\texttt{ ) }\\
 & | & \texttt{( declare-fun } \langle\textit{ symbol }\rangle \texttt{ ( }\langle\textit{ symbol }\rangle^* \texttt{ ) }\langle\textit{ sort }\rangle\texttt{ ) }\\
 \end{array}
 \]
+
+As a brief description for these commands, \verb|assert| adds a well-sorted
+formula to the current assertion level, \verb|pop| and \verb|push| respectively
+add and remove an assertion level from the stack. \verb|check-sat| asks the
+solver whether the formulas from the stack are satisfiable or not.
+\verb|declare-sort|, \verb|declare-const| and \verb|declare-fun| allow declaring
+new sorts, functions or constants (i.e.  nullary functions).
+
+The command responses are defined by the following syntax:
 
 \[
 \begin{array}{rcll}
@@ -471,15 +487,40 @@ Show the subset of commands and responses that we are going to use.
 \end{array}
 \]
 
-\textcolor{red}{TODO}: the example proposed by Manuel
+where some commands have a specific success response, like \verb|sat| |
+\verb|unsat| | \verb|unknown| for \verb|check-sat|.
+
+This would be an example for checking the validity of the linear integer 
+arithmetic formula $x + 3 \leq y + 3 \Rightarrow x \leq y$:
+
+\begin{verbatim}
+(declare-const x Int)
+(declare-const y Int)
+
+; We add the negated formula
+(assert (not (=> 
+  (<= (+ x 3) (+ y 3)) 
+  (<= x y)
+)))
+
+; and check if it is unsatisfiable
+(check-sat)
+\end{verbatim}
+
+We are going to check it in the following section.
 
 \subsection{Z3}
 
 One of the \acrshort{smt} solvers that implements the SMT-LIB standard is the Z3
-theorem prover from Microsoft Research.
+theorem prover from Microsoft Research. It can be started with its \verb|stdin|
+and \verb|stdout| as communication channels by launching the \verb|z3|
+executable with the \verb|-in| argument:
 
-\textcolor{red}{TODO}: reference, show its usage with -in and say why we have
-chosen it and why we only communicate with it by means of SMT-LIB.
+\begin{verbatim}
+z3 -in 
+# Copy and paste the previous SMT-LIB example...
+unsat
+\end{verbatim}
 
 Note that there may exist subtle non-compliances when a solver implements the
 SMT-LIB standard. For example, we have found that Z3 does not include the
@@ -492,10 +533,11 @@ corner cases in which a command response can be confused with a printed string
 intended to delimit command responses, which is one of the proposed usages for
 \verb|echo| in \cite{smtLibStandard}:
 
-\textcolor{red}{TODO}: clarify why this affects us
-
 \begin{verbatim}
 $ z3 -in <<<`(check-sat) (echo "sat")'
 sat
 sat
 \end{verbatim}
+
+We are aware of this because we have used such technique to delimit the command 
+responses in order to parse them.

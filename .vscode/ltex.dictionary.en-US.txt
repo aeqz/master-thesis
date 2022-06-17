@@ -41,3 +41,5 @@ DIALYZER
 dialyzer
 Metaprogramming
 postcondition
+SATisfiability
+nullary

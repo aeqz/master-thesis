@@ -126,8 +126,14 @@ Terms can be of a given type:
 (define-fun is_integer ((x Term)) Bool (= (type x) int))
 (define-fun is_boolean ((x Term)) Bool (= (type x) bool))
 (define-fun is_tuple ((x Term)) Bool (= (type x) tuple))
-(define-fun is_nonempty_list ((x Term)) Bool (= (type x) nonempty_list))
-(define-fun is_list ((x Term)) Bool (or (= x nil) (= (type x) nonempty_list)))
+
+(define-fun is_nonempty_list ((x Term)) Bool 
+  (= (type x) nonempty_list)
+)
+
+(define-fun is_list ((x Term)) Bool 
+  (or (= x nil) (= (type x) nonempty_list))
+)
 \end{verbatim}
 
 We also need a way to introduce and eliminate $\Term$s:
