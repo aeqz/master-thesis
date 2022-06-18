@@ -14,12 +14,14 @@ as a result of the previous integration with the solver.
 
 \section{SMT-LIB interpreter binding}
 
-As we did not find any existing Elixir package that met our requirements, we
-addressed the implementation of an SMT-LIB interpreter binding as an opportunity
-to get started with Elixir in practice, and also with its macro system. This has
-given place to a side project which consists of an Elixir \gls{dsl} to
-communicate with SMT-LIB interpreters, and may be eventually provided as a 
-general-purpose library to be available for the Elixir community.
+As we did not find any existing Elixir package that met our requirements
+explained above, except for one that seemed to be unmaintained and not ready for
+a general-purpose usage, we addressed the implementation of an SMT-LIB
+interpreter binding as an opportunity to get started with Elixir in practice,
+and also with its macro system. This has given place to a side project which
+consists of an Elixir \gls{dsl} to communicate with SMT-LIB interpreters, and
+may be eventually provided as a general-purpose library to be available for the
+Elixir community.
 
 \subsection{Overview}
 \label{integ:dslexample}
@@ -46,14 +48,14 @@ which prints \verb|"Verified!"|, proving that
 
 $$x + 3\leq y + 3 \Rightarrow x \leq y$$
 
-We provide a \verb|with_local_conn| macro that creates a default fresh
-connection with Z3 through ports, makes it available to its inner SMT-LIB
-command \gls{dsl} macros (e.g. \verb|declare_const| and \verb|assert|) and
-closes it once all of them have been evaluated. It is a convenient wrapper
-around another macro, namely \verb|with_conn|, which allows to provide a custom
-or reused connection and does not close it automatically.
+We provide a \verb|with_local_conn/1| macro that creates a default fresh
+connection with Z3 through ports, injects it as the first argument to its inner
+SMT-LIB command \gls{dsl} macros (e.g. \verb|declare_const/2| and
+\verb|assert/2|) and closes it once all of them have been evaluated. It is a
+convenient wrapper around another macro, namely \verb|with_conn/2|, which allows
+to provide a custom or reused connection and does not close it automatically.
 
-Regarding the contents of a \verb|with_conn| block, our \gls{dsl} currently
+Regarding the contents of a \verb|with_conn/2| block, our \gls{dsl} currently
 supports a subset of SMT-LIB commands that is shown in the following section,
 but it is almost trivial to add support for new ones, being the biggest deal to
 parse its response if it has a specific one.  The expressions corresponding to
@@ -107,6 +109,11 @@ def ast_to_command({:declare_const, _, [{v, s}]}) do
   {:declare_const, symbol(v), sort(s)}
 end
 \end{lstlisting}
+
+In fact, our implementation is a bit more complicated because it allows using 
+run-time values bound to Elixir variables in some places, such as constants and
+identifiers, thus in our case it translates Elixir \gls{ast} corresponding to
+our \gls{dsl} into other Elixir \gls{ast} that evaluates to SMT-LIB commands.
 
 Once we were able to transform the \gls{dsl} into SMT-LIB commands, we required
 a function to render each command into a \verb|string| that an SMT-LIB
@@ -177,8 +184,8 @@ timeout, but other implementations involving different solvers and communication
 mechanisms should also be possible.
 
 All of this makes possible to implement and provide the public \gls{api} of the 
-package under a top level module that defines the \gls{dsl} macros and can be
-used as in Section \ref{integ:dslexample}.
+package under a top level module that defines the corresponding \gls{dsl} macros
+and can be used as in Section \ref{integ:dslexample}.
 
 \section{The L0 language}
 
@@ -216,7 +223,7 @@ The syntax of L0 expressions is given by the following grammar:
 & | & \epsilon_1;\epsilon_2 & \{ \textrm{sequential evaluation} \}\\
 & | & \localE~\epsilon & \{ \textrm{local scoped proof state} \}\\
 & | & \addE~\varphi &  \{ \textrm{add a logic formula $\varphi \in \mathbb{F}$ to the state} \}\\
-& | & \declareConstE{x} &  \{ \textrm{declare constant of type $\Term$} \}\\
+& | & \declareE{x} &  \{ \textrm{declare a variable of type $\Term$} \}\\
 & | & \whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3} &  \{ \textrm{unsatisfiability conditional} \}\\
 \end{array}
 \]
@@ -227,6 +234,16 @@ solver.
 If $I = [i_1, \ldots, i_n]$ is a sequence of elements, we use the notation
 $\overline{\epsilon_i}^{i \in I}$ to denote the sequential composition 
 $\epsilon_{i_1};\dots;\epsilon_{i_n}$.
+
+As we will reflect in the language semantics, the $\failE$ expression will allow
+us to trigger a validation failure, the $\declareE{x}$ and $\addE~\varphi$ ones
+will allow us to respectively declare a new variable and to add a formula to the
+state, the $\localE$ one to evaluate an expression without incorporating its
+changes in the final state, and $\whenUnsatW$ will be a control flow construct
+that depends on the unsatisfiability of a given expression.  Sequential
+evaluation will combine expressions to be evaluated one after the other, and
+$\skipE$ will be useful for example if some $\whenUnsatW$ branch requires doing
+nothing. 
 
 \subsection{Semantics}
 
@@ -261,7 +278,7 @@ transforms the solver state $(X, \Phi)$ into the state $(X', \Phi')$.
 \begin{minipage}[t]{0.45\textwidth}
   \begin{prooftree}
     \AxiomC{$x \notin X$}
-    \UnaryInfC{$\BS{\declareConstE{x}}{X}{\Phi}{(X \cup \{x\}, \Phi)}$}
+    \UnaryInfC{$\BS{\declareE{x}}{X}{\Phi}{(X \cup \{x\}, \Phi)}$}
   \end{prooftree}
 \end{minipage}
 \end{center}
@@ -310,7 +327,7 @@ solver's state.
 
 Note also that a $\localE$ expression discards the variable definitions and
 formulas added by its expression, restoring the initial state, and the same
-happens for the expression under the unsatisfactibility test in a $\whenUnsatW$
+happens for the expression under the unsatisfiability test in a $\whenUnsatW$
 expression.
 
 \subsection{Implementation}
@@ -394,7 +411,8 @@ end
 
 Finally, instead of implementing a \verb|seq| expression, we can reuse Elixir
 blocks by handling several cases, and allowing to provide them with \verb|do|
-syntax:
+syntax (i.e. to write an Elixir block argument within a trailing \verb|do| and
+\verb|end| delimiters in a macro invocation):
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defmacro eval(

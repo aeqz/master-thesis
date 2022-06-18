@@ -368,7 +368,7 @@ quite straightforward way:
 \begin{array}{l}
 \trStm{\skipE} \equiv \skipE\\[1em]
 \trStm{\blockE~S} \equiv \localE~\trStm{S}\\[1em]
-\trStm{\havocE~x} \equiv \declareConstE{\widehat{x}}\\[1em]
+\trStm{\havocE~x} \equiv \declareE{\widehat{x}}\\[1em]
 \trStm{S_1;S_2} \equiv \trStm{S_1};\trStm{S_2}\\
 \qquad \textbf{where }(\epsilon_1, t_1) = \trExps{e_1}\\
 \qquad \phantom{\textbf{where }}(\epsilon_2, t_2) = \trExps{e_2}
