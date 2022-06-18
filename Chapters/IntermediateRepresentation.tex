@@ -597,7 +597,7 @@ connection with Z3 and allows other configurations, such as a function to listen
 every verification error report when verifying the given code.
 
 Here are some examples that succeed to verify according to the Elixir behavior 
-explained in \ref{prelim:elixir}:
+explained in Section \ref{prelim:elixir}:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 import Boogiex
@@ -719,12 +719,13 @@ end
 \end{lstlisting}
 
 Finally, this allows us to implement a public \gls{api} for the package which
-defines the corresponding macros from the example at \ref{ir:dslexample}. They
-translate the L1 \gls{dsl} into L0 and evaluate it as in
-\ref{integ:l0implementation}. A verification function for L1 statements can be
-implemented in terms of it as follows but, in contrast to the one presented in
-\ref{integ:l0implementation}, our current implementation returns verification
-error reports instead of raising an exception and stopping the whole process:
+defines the corresponding macros from the example at Section
+\ref{ir:dslexample}. They translate the L1 \gls{dsl} into L0 and evaluate it as
+in Section \ref{integ:l0implementation}. A verification function for L1
+statements can be implemented in terms of it as follows but, in contrast to the
+one presented in Section \ref{integ:l0implementation}, our current
+implementation returns verification error reports instead of raising an
+exception and stopping the whole process:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec verify_l1(Env.t(), L1Stm.ast()) :: [term()]

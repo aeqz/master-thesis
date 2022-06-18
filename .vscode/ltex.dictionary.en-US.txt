@@ -48,3 +48,6 @@ PROPerty-based
 Questant
 NimbleParsec
 Thordendal
+combinator
+unsat
+unsatisfactibility

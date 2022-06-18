@@ -4,9 +4,11 @@
 In order to implement our system, we will require to be able to interact with an
 \acrshort{smt} solver from Elixir. We have decided to use the Z3 theorem prover,
 which implements SMT-LIB, and to communicate with it precisely by using this
-standard.
+standard. This makes possible for our system to allow integrating other 
+\acrshort{smt} solvers or to provide different communication implementations
+without requiring so much effort.
 
-Then, we will introduce a simple formal language whose semantics are defined in
+Then, we will introduce a simple formal language whose semantics is defined in
 terms of the \gls{smt} problem, and an example of its implementation in Elixir
 as a result of the previous integration with the solver.
 
@@ -16,14 +18,14 @@ As we did not find any existing Elixir package that met our requirements, we
 addressed the implementation of an SMT-LIB interpreter binding as an opportunity
 to get started with Elixir in practice, and also with its macro system. This has
 given place to a side project which consists of an Elixir \gls{dsl} to
-communicate with SMT-LIB interpreters, and may be at the end provided to be
-available for the Elixir community.
+communicate with SMT-LIB interpreters, and may be eventually provided as a 
+general-purpose library to be available for the Elixir community.
 
 \subsection{Overview}
 \label{integ:dslexample}
 
-By using our solver \gls{dsl}, the SMT-LIB example shown in \ref{prelim:smtlib}
-can be written in Elixir as follows:
+By using our solver \gls{dsl}, the SMT-LIB example shown in Section
+\ref{prelim:smtlib} can be written in Elixir as follows:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 import SmtLib
@@ -33,34 +35,41 @@ with_local_conn do
                 y: Int
 
   assert !((:x + 3 <= :y + 3) ~> (:x <= :y))
-  check_sat |> IO.inspect()
+  case check_sat do 
+    {:ok, :unsat} -> IO.puts("Verified!")
+    _             -> IO.puts("Not verified")
+  end
 end
 \end{lstlisting}
 
-which prints to \verb|{:ok, :unsat}|, proving that $$x + 3
-\leq y + 3 \Rightarrow x \leq y$$
+which prints \verb|"Verified!"|, proving that 
 
-We provide a \verb|run| macro that evaluates the given \gls{dsl} block by
-communicating with a solver. This communication can be reused, customized and
-configured, but if none is provided as in the example, it uses a default fresh
-one that communicates with Z3 through Elixir ports.
+$$x + 3\leq y + 3 \Rightarrow x \leq y$$
 
-On the one hand, the expressions corresponding to logical formulas include
-support for variables, uninterpreted function application, quantifiers, and
-built-in operators and logic connectives such as \verb|+|, \verb|!| and
-\verb|&&|.
+We provide a \verb|with_local_conn| macro that creates a default fresh
+connection with Z3 through ports, makes it available to its inner SMT-LIB
+command \gls{dsl} macros (e.g. \verb|declare_const| and \verb|assert|) and
+closes it once all of them have been evaluated. It is a convenient wrapper
+around another macro, namely \verb|with_conn|, which allows to provide a custom
+or reused connection and does not close it automatically.
 
-On the other hand, it currently supports a subset of SMT-LIB commands that is
-shown in the following section, but it is almost trivial to add support for new
-ones, being the biggest deal to parse its response if it has a specific one. 
+Regarding the contents of a \verb|with_conn| block, our \gls{dsl} currently
+supports a subset of SMT-LIB commands that is shown in the following section,
+but it is almost trivial to add support for new ones, being the biggest deal to
+parse its response if it has a specific one.  The expressions corresponding to
+logical formulas include support for variables, uninterpreted function
+applications, quantifiers, and built-in operators and logic connectives such as
+\verb|+|, \verb|!| and \verb|&&|.
 
 \subsection{Implementation}
 
-As explained in \ref{prelim:typespecs}, we will use Elixir type specifications
-as a guide to explain our implementation in a simplified form.
+As explained in Section \ref{prelim:typespecs}, we will use Elixir type
+specifications as a guide to explain our implementation in a simplified form.
+Also, we will prefer to implement regular Elixir functions and then define 
+macros only in the top level module by making use of this regular functions.
 
 First, we have defined \verb|type|s to represent SMT-LIB commands and responses
-from the subset that we have shown in \ref{prelim:smtlib}:
+from the subset that we have shown in Section \ref{prelim:smtlib}:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @type command_t ::
@@ -99,23 +108,23 @@ def ast_to_command({:declare_const, _, [{v, s}]}) do
 end
 \end{lstlisting}
 
-On the one hand, once we were able to transform the \gls{dsl} into SMT-LIB
-commands, we required a function to render each command into a \verb|string|
-that an SMT-LIB interpreter understands:
+Once we were able to transform the \gls{dsl} into SMT-LIB commands, we required
+a function to render each command into a \verb|string| that an SMT-LIB
+interpreter understands:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec command_to_string(command_t) :: String.t
 \end{lstlisting}
 
-It handles compositionally the \verb|command_t| type with cases like the
-following:
+This function handles compositionally the \verb|command_t| type with cases like
+the following:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 {:declare_const, s1, s2} ->
   "(declare-const #{symbol(s1)} #{sort(s2)})"
 \end{lstlisting}
 
-On the other hand, in order to understand the solver responses, we have also
+Besides this, in order to understand the solver responses, we have also
 implemented a function that parses a received \verb|string|:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
@@ -124,9 +133,10 @@ implemented a function that parses a received \verb|string|:
   | {:error, term}
 \end{lstlisting}
 
-It has been implemented using \verb|NimbleParsec|, an Elixir package of parser
-combinators, in order to delegate this task and get the reliability of a well
-tested tool \citep{NimbleDocs}. Its top level parser definition is as follows:
+This function has been implemented using \verb|NimbleParsec|, an Elixir package
+of parser combinators, in order to delegate this task and get the reliability of
+a well tested tool \citep{NimbleDocs}. Its top level parser definition is as
+follows:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defparsec :general_response,
@@ -139,9 +149,15 @@ defparsec :general_response,
   ])
 \end{lstlisting}
 
+where, for example, \verb|eos/1| is a combinator that denotes the end of the 
+stream of data being parsed, \verb|success/1| parses the success response of
+SMT-LIB commands that do not have a specific one, and
+\verb|specific_success_response/1| parses specific responses such as the one for
+\verb|check_sat|.
+
 Finally, to interact with the solver, we have defined an Elixir low level
-protocol to send SMT-LIB commands and receive SMT-LIB responses in a synchronous
-way:
+protocol to send SMT-LIB commands to a solver and receive SMT-LIB responses in a
+synchronous way:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defprotocol Connection do
@@ -155,21 +171,22 @@ defprotocol Connection do
 end
 \end{lstlisting}
 
-We provide a default implementation to communicate with Z3 through ports and allow to
-configure some of its parameters like the timeout, but other implementations
-involving different solvers and communication mechanisms should also be
-possible.
+We provide a default implementation of this protocol to communicate with Z3
+through ports and allow the user to configure some of its parameters like the
+timeout, but other implementations involving different solvers and communication
+mechanisms should also be possible.
 
 All of this makes possible to implement and provide the public \gls{api} of the 
-package under a top level module that can be used as in \ref{integ:dslexample}.
+package under a top level module that defines the \gls{dsl} macros and can be
+used as in Section \ref{integ:dslexample}.
 
 \section{The L0 language}
 
-This section exposes a formal language that we have called L0 and will
-represent the lowest level of our verification system.
+This section introduces a formal language that we have named L0. The name stands
+for `Level 0', since it is the lowest level language of our verification stack.
 
-It is intended to be implemented as Elixir expressions that send SMT-LIB 
-statements to an \acrshort{smt} solver and will allow us to define a
+L0 is intended to be implemented as Elixir expressions that send SMT-LIB 
+statements to an \acrshort{smt} solver. This will allow us to define a
 verification \gls{ir} on top of it.
 
 \subsection{Notation}
@@ -204,6 +221,9 @@ The syntax of L0 expressions is given by the following grammar:
 \end{array}
 \]
 
+where $\Term$ is a sort that must be previously defined in the \acrshort{smt}
+solver.
+
 If $I = [i_1, \ldots, i_n]$ is a sequence of elements, we use the notation
 $\overline{\epsilon_i}^{i \in I}$ to denote the sequential composition 
 $\epsilon_{i_1};\dots;\epsilon_{i_n}$.
@@ -211,16 +231,21 @@ $\epsilon_{i_1};\dots;\epsilon_{i_n}$.
 \subsection{Semantics}
 
 Let $V$ be a set of variable names, $\mathbb{F}(V)$ the subset of $\mathbb{F}$ 
-with free variables in $V$, and a predicate \unsat{\_} which, given a set of 
-formulas from $\mathbb{F}$, determines whether they are unsatisfiable or not. 
-We define the big step operational semantics of L0 expressions as the smallest 
-relation $\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$ between $\Exp{0} \times 
-\mathcal{P}(V) \times \mathcal{P}({\mathbb{F}(V)})$ and 
-$\mathcal{P}(V) \times \mathcal{P}({\mathbb{F}(V)})$ that satisfies the following 
-rules:
+with free variables in $V$, and a predicate \textit{unsat} which, given a set of
+formulas $\Phi$ from $\mathbb{F}$, determines whether they are unsatisfiable or
+not.  We define the big step operational semantics of L0 expressions as the
+smallest relation $\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$ between $\Exp{0} \times
+\mathcal{P}(V) \times \mathcal{P}({\mathbb{F}(V)})$ and $\mathcal{P}(V) \times
+\mathcal{P}({\mathbb{F}(V)})$ that satisfies the rules from Figure
+\ref{fig:l0bs}.
 
-\bigskip
+A pair $(X, \Phi)$ denotes the state of the \acrshort{smt} solver, where $X$ is 
+the set of variable names defined at the moment, and $\Phi$ the set of formulas
+that have been added also at that moment. A judgement
+$\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$ means that the expression $\epsilon$
+transforms the solver state $(X, \Phi)$ into the state $(X', \Phi')$. 
 
+\begin{figure}
 \begin{prooftree}
   \AxiomC{ }
   \UnaryInfC{$\BS{\skipE}{X}{\Phi}{(X, \Phi)}$}
@@ -241,7 +266,7 @@ rules:
 \end{minipage}
 \end{center}
 
-\bigskip
+\medskip
 
 \begin{prooftree}
   \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
@@ -249,14 +274,14 @@ rules:
   \BinaryInfC{$\BS{\epsilon_1;\epsilon_2}{X}{\Phi}{(X'', \Phi'')}$}
 \end{prooftree}
 
-\bigskip
+\medskip
 
 \begin{prooftree}
   \AxiomC{$\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$}
   \UnaryInfC{$\BS{\localE~\epsilon}{X}{\Phi}{(X, \Phi)}$}
 \end{prooftree}
 
-\bigskip
+\medskip
 
 \begin{prooftree}
   \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
@@ -265,7 +290,7 @@ rules:
   \TrinaryInfC{$\BS{\whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3}}{X}{\Phi}{(X'', \Phi'')}$}
 \end{prooftree}
 
-\bigskip
+\medskip
 
 \begin{prooftree}
   \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
@@ -273,13 +298,20 @@ rules:
   \AxiomC{$\BS{\epsilon_3}{X}{\Phi}{(X'', \Phi'')}$}
   \TrinaryInfC{$\BS{\whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3}}{X}{\Phi}{(X'', \Phi'')}$}
 \end{prooftree}
+\caption{Big step operational semantics of the L0 language}
+\label{fig:l0bs}
+\end{figure}
 
-\bigskip
+The absence of rules for the $\failE$ expression is intentional, because we want
+any reachable $\failE$ to prevent evaluation of the expression in which it is
+contained.  We have also required this to happen if the same variable is
+declared twice or if a formula with undeclared variables is being added to the 
+solver's state.
 
-The absence of rules for the $\failE$ expression is intentional, because we
-want any reachable $\failE$ to prevent the whole expression for evaluating.
-We have also required this to happen if the same variable is declared twice
-or if a formula with undeclared variables is being added.
+Note also that a $\localE$ expression discards the variable definitions and
+formulas added by its expression, restoring the initial state, and the same
+happens for the expression under the unsatisfactibility test in a $\whenUnsatW$
+expression.
 
 \subsection{Implementation}
 \label{integ:l0implementation}
@@ -287,7 +319,8 @@ or if a formula with undeclared variables is being added.
 It is difficult to justify the compliance of an implementation of L0 with its
 formal semantics due to the undecidability of the \gls{smt} problem in the 
 general case. In practice, this task will be delegated to an \acrshort{smt} 
-solver as if it were a black box that can solve the problem.
+solver as if it were a black box that can determine whether a set of first-order
+formulas is unsatisfiable.
 
 We can implement a simple Elixir \gls{dsl} for the L0 language in terms of our
 SMT-LIB binding for Elixir. The \verb|fail| expression raises an exception:
@@ -325,8 +358,8 @@ defmacro eval(conn, {:add, _, [f]}) do
 end
 \end{lstlisting}
 
-Similarly, the \verb|declare-const| expression corresponds to a
-\verb|declare_const| in SMT-LIB:
+Similarly, the \verb|declare_const| expression corresponds to a
+\verb|declare-const| in SMT-LIB:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defmacro eval(conn, {:declare_const, _, [x]}) do
@@ -360,7 +393,8 @@ end
 \end{lstlisting}
 
 Finally, instead of implementing a \verb|seq| expression, we can reuse Elixir
-blocks by handling several cases:
+blocks by handling several cases, and allowing to provide them with \verb|do|
+syntax:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defmacro eval(
@@ -399,15 +433,16 @@ end
 \end{lstlisting}
 
 Assuming the defined macros to be in scope, and a \verb|conn| variable that
-represents a fresh connection with an \acrshort{smt} solver and has the
-\verb|Term| sort already defined, this would be a simple example of its usage:
+represents a fresh connection with an \acrshort{smt} solver which has the
+\verb|Term| sort already defined, this would be a simple example of the usage of
+the \verb|eval/1| macro:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 eval conn do
   declare_const :x
 
-  # Replacing `!=' by `==' leads to 
-  # a verification exception
+  # Replacing `!=' by `==' leads to a verification
+  # exception, since `fail' is executed
   when_unsat add :x != :x do
     skip
   else
