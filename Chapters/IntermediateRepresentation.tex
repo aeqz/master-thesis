@@ -104,7 +104,7 @@ of an L1 expression in the underlying logic has sort $\Term$:
 Terms can be of a given type:
 
 \begin{verbatim}
-; The sort type
+; The sort Type
 (declare-sort Type 0)
 
 ; Modelled types
@@ -465,7 +465,7 @@ x~\texttt{<}~y\\
 \end{array}
 \]
 
-and it in the same ways for $\texttt{>}$, $\texttt{<=}$ and $\texttt{>=}$. An
+and it is in the same way for $\texttt{>}$, $\texttt{<=}$ and $\texttt{>=}$. An
 improvement would be to extend this for any term, including lists and tuples.
 
 Term equality can be specified as
@@ -586,15 +586,19 @@ addressed in future work.
 \section{Implementation}
 \label{ir:l1implementation}
 
-In this section, we present our implementation for the L2 \gls{ir} in Elixir.
+In this section, we present our implementation for the L2 verification \gls{ir}
+in Elixir.
 
 \subsection{Overview}
 \label{ir:dslexample}
 
-We have implemented a \gls{dsl} in Elixir to code and verify programs written in
-the L2 \gls{ir}. The \verb|with_local_env/2| macro provides a default fresh
-connection with Z3 and allows other configurations, such as a function to listen
-every verification error report when verifying the given code.
+We have implemented a \gls{dsl} in Elixir to write and verify L2 programs. The
+macro \verb|with_local_env/1| provides a default environment with a fresh Z3
+connection that is injected as the first argument of its inner \gls{dsl} macros
+(i.e. \verb|assert/2|, \verb|havoc/2|, etc.) and is closed once all of them have
+been evaluated. As in our \acrshort{smt} binding, \verb|with_local_env/1| is a
+convenient wrapper around \verb|with_env/2|, which allows to provide a custom or
+reused connection and does not close it automatically.
 
 Here are some examples that succeed to verify according to the Elixir behavior 
 explained in Section \ref{prelim:elixir}:
@@ -730,7 +734,6 @@ exception and stopping the whole process:
 def verify_l1(env, s) do
   L0Exp.eval(
     env,
-    fn -> Msg.evaluate_stm_context(s) end,
     translate_l1_stm(s)
   )
 end
