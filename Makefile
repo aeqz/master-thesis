@@ -15,7 +15,7 @@ fast:
 
 clean:
 	@echo Recursively removing auxiliary files...
-	@for i in $(shell find -E . -type f -regex '.*.(acn|acr|alg|aux|bbl|blg|glg|glo|gls|idx|ist|lof|log|lot|out|toc|ind|ilg|fls|synctex.gz|fdb_latexmk)'); do rm $$i; done
+	@for i in $(shell find -E . -type f -regex '.*.(acn|acr|alg|aux|bbl|blg|glg|glo|gls|idx|ist|lof|log|lot|out|toc|ind|ilg|fls|synctex.gz|fdb_latexmk|swp)'); do rm $$i; done
 
 
 distclean: clean

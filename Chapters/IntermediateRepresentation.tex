@@ -602,9 +602,7 @@ explained in Section \ref{prelim:elixir}:
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 import Boogiex
 
-with_local_env(
-  on_error: &IO.inspect/1
-) do
+with_local_env do
   assert 4 - 2 === 6 - 4
   assert (false or 2) === 2
   assert 3 > 2 and 1 <= 1

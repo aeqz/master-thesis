@@ -1,9 +1,8 @@
 \chapter{Introduction}
 \label{cap:introduction}
 
-\textcolor{red}{TODO}
-
-At some point explain the general idea, including a diagram
+\textcolor{red}{TODO}: introduction. At some point explain the general idea, 
+including a diagram, and include a guide referencing the chapters.
 
 \section{Motivation}
 
@@ -11,33 +10,42 @@ At some point explain the general idea, including a diagram
 
 \section{Goals}
 
-\textcolor{red}{TODO}
+The main goal of this project is to use the Elixir metaprogramming capabilities
+through macros to implement a code verification system for the Elixir
+programming language itself, without requiring us to modify its compiler or to
+implement a parser.
 
-Use the Elixir macro system to implement a verification system for Elixir itself.
+Our system will rely on a verification \gls{ir} and the use of \acrshort{smt}
+solvers for its verification.
 
-\section{Sub-goals}
+\subsection{Sub-goals}
 
-\begin{itemize}
-  \item To integrate \acrshort{smt} solvers in Elixir and offer a \gls{dsl} 
-    to specify restriction problems.
-  \item Develop a verification \gls{ir} to express Erlang terms and its 
-    dynamically typed nature.
-  \item Translate the developed \gls{ir} into the previous \gls{dsl}.
-  \item Design a mechanism to translate a subset of the Elixir 
-    programming language into the verification \gls{ir}.
-\end{itemize}
+In order to achieve the main goal, we have proposed several possible sub-goals.
+One of them is to integrate \acrshort{smt} solvers in Elixir with a \gls{dsl} of
+macros like in the following draft:
 
-\section{Non-goals}
+Another one is to develop a verification \gls{ir} to express Elixir terms and
+its dynamically typed nature:
 
-\textcolor{red}{TODO}
+Then, we must define a translation from this \gls{ir} into the \acrshort{smt}
+solver \gls{dsl} for its verification and, finally, we must also provide a
+mechanism to translate a subset of the Elixir programming language into the
+verification \gls{ir}.
 
-\begin{itemize}
-  \item Concurrency.
-  \item Termination (i.e. only partial verification for the moment).
-\end{itemize}
+\subsection{Non-goals}
+
+We have left some points as possible future work. The first one is that we are
+going to deal only with sequential Elixir programs and not with concurrent ones.
+Even for the sequential Elixir part we are going to support only a small subset 
+to start with.
+
+Also, we are going to deal only with partial verification for the moment and not
+to verify or reason about termination. Nevertheless, we will discuss some ideas 
+regarding it when introducing user-defined verification functions and how the 
+system allows to unfold their invocations.  
 
 \section{Work plan}
 
-\textcolor{red}{TODO}
-
-Describe the work plan to achieve the proposed goals.
+As a work plan, we will follow the sub-goals in the same order in which we have
+mentioned them, preceded by a training period for acquiring the required
+knowledge and practice with the Elixir programming language.
