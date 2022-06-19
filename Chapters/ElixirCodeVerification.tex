@@ -35,27 +35,27 @@ following grammar:
 \Pat \ni P ::= c \mid x \mid [\:] \mid [P_1 \mid P_2] \mid \{ P_1, \ldots, P_n \}
 \]
 
-Note that the guard expressions $f_1, \ldots, f_n$ correspond to L1 expressions, due 
-to their restricted nature.
+Note that the guard expressions $f_1, \ldots, f_n$ correspond to L1 expressions,
+due to their restricted nature.
 
 \subsection{Translation into L1}
 
-In the following, given a set $A$, we use the notation $[A]$ to denote the set of 
-sequences of elements in $A$. If $x_1, \ldots, x_n$ we use the notation 
-$[x_1, \ldots, x_n]$ to denote such a sequence. We also use a list comprehension 
-notation that is similar to the one in Haskell language. For example, 
-$[(i, j) \mid i \leftarrow [1, 2], j \leftarrow [3, 4, 5]]$.
+In the following, given a set $A$, we use the notation $[A]$ to denote the set
+of sequences of elements in $A$. If $x_1, \ldots, x_n$ we use the notation 
+$[x_1, \ldots, x_n]$ to denote such a sequence. We also use a list comprehension
+notation that is similar to the one in Haskell language. For example, $[(i, j)
+\mid i \leftarrow [1, 2], j \leftarrow [3, 4, 5]]$.
 
-Let us define a function: $\trEXP{\_} : \Exp{2} \rightarrow [\Stm \times \Exp{1}]$ 
-that, given an expression $E$ in the source language, generates a sequence of pairs 
-$(S, e)$ where $S$ is the L1 statement that models the semantics of $E$, and $e$ is a 
-L1 expression that represents the result to which $E$ is evaluated.
+Let us define a function: $\trEXP{\_} : \Exp{2} \rightarrow [\Stm \times
+\Exp{1}]$ that, given an expression $E$ in the source language, generates a
+sequence of pairs $(S, e)$ where $S$ is the L1 statement that models the
+semantics of $E$, and $e$ is a L1 expression that represents the result to which
+$E$ is evaluated.
 
-We need an auxiliary function 
-$\trMatch{\_}{\_} : \Exp{1} \times \Pat \rightarrow \Exp{1}$ that, given an L1 
-expression $e$ and a pattern $P$, returns another L1 expression that is a 
-$\mathit{boolean}$ term and is evaluated to $\true$ if and only if $e$ 
-matches $P$. Its definition is as follows:
+We need an auxiliary function $\trMatch{\_}{\_} : \Exp{1} \times \Pat
+\rightarrow \Exp{1}$ that, given an L1 expression $e$ and a pattern $P$, returns
+another L1 expression that is a $\mathit{boolean}$ term and is evaluated to
+$\true$ if and only if $e$ matches $P$. Its definition is as follows:
 
 \[
 \begin{array}{l}
@@ -69,21 +69,33 @@ matches $P$. Its definition is as follows:
 \end{array}
 \]
 
-Also, $\mathit{vars}(P)$ is a function to denote the $L1$ variable expressions that 
-appear in a pattern $P$.
+Also, $\mathit{vars}(P)$ is a function to denote the $L1$ variable expressions
+that appear in a pattern $P$.
 
 L2 expressions that are contained within the syntax of L1 are translated as they
-are, but we generate a dummy assertion to check if the singleton tuple with this
-expression is a tuple. Otherwise, bad formed expressions (e.g. \verb|2 + true|)
-at the top level or in a sequence may be ignored by the verification process:
+are, but we generate an assertion to check if the singleton tuple which contains
+that expression is a tuple. This will force to introduce the expression in the
+generated L1 statements to be verified. Otherwise, bad formed expressions at the
+top level whose translation yields to verification failures may be ignored
+during the L2 translation (e.g. \verb|true + 2|):
 
 \[
-\trEXP{e} = [(\assertE~\mathit{is\mbox{-}tuple}(\{e\}), e)]
+\trEXP{e} = [(\assertE~\textit{is\mbox{-}tuple}(\{e\}), e)]
 \]
 
-Expressions of the form $P = E$ are translated into assertions that check whether the
-result of evaluating E matches the pattern $P$, and then assume the equality between 
-$P$ and $E$.
+Another approach would be to extend the L1 syntax with a new statement that just
+checks an L1 expression.
+
+A $\ghostE$ expression is translated into an arbitrary $L1$ expression, for
+example the empty list, and the provided $L1$ statement as its meaning:
+
+\[
+\trEXP{\ghostE~\doW~S~\Wend} = [(S, [])]
+\]
+
+Expressions of the form $P = E$ are translated into assertions that check
+whether the result of evaluating E matches the pattern $P$, and then assume the
+equality between $P$ and $E$.
 
 \[
 \begin{array}{l}
@@ -105,9 +117,27 @@ $P$ and $E$.
 \end{array}
 \]
 
-In order to translate a sequence of expressions $E_1;E_2$ we have to append every 
-statement generated from the translation of $E_2$ to every statement generated from
-the translation of $E_1$:
+In order to translate a sequence of expressions $E_1;E_2$ we have to append 
+every statement generated from the translation of $E_2$ to every statement 
+generated from the translation of $E_1$. We must also deal carefully with
+$\ghostE$ expressions because, as its translation also returns an L1 expression,
+it must be skipped in order to avoid altering the semantics of a block.
+
+This will be its translation when the last expression is a $\ghostE$ one, taking
+into account that \verb|;| is associative:
+
+\[
+\begin{array}{l}
+\trEXP{E;\ghostE~\doW~S~\Wend} = [(S_i;S,e_i) \mid i \leftarrow [1..n]] \\
+\qquad 
+\begin{array}{ll}
+\textbf{where} & [(S_1,e_1),\dots,(S_n, e_n)] = \trEXP{E} \\
+\end{array}
+\end{array}
+\]
+
+And this will be the general case when the previous one does not apply (i.e.
+$E_2$ is not a sequence ending in a $\ghostE$):
 
 \[
 \begin{array}{l}
@@ -161,22 +191,10 @@ each translation of the resulting expression of that branch:
   \item Assume that the pattern does match.
 \end{enumerate}
 
-This models appropriately the short-circuit semantics of the \verb|case| construct
-because, if some branch will never be evaluated, assuming its pattern and guard will
-make the hypothesis state inconsistent and everything would be $\true$ after that,
-so it will not yield to validation failures.
-
-Finally, a $\ghostE$ expression is translated into an arbitrary $L1$
-expression, for example the empty list, and the provided $L1$ statement as its 
-meaning:
-
-\[
-\trEXP{\ghostE~\doW~S~\Wend} = [(S, [])]
-\]
-
-\textcolor{red}{TODO}: problem, this changes the program meaning for verification,
-because the result of a sequence that ends in a ghost will evaluate to the empty list,
-which will not exist in the executable program. 
+This models appropriately the short-circuit semantics of the \verb|case|
+construct because, if some branch will never be evaluated, assuming its pattern
+and guard will make the hypothesis state inconsistent and everything would be
+$\true$ after that, so it will not yield to validation failures.
 
 \subsection{Verification process}
 
@@ -200,18 +218,18 @@ Show our current ideas about termination using term sizes.
 
 \textcolor{red}{TODO}: show examples in a separate section before this one if possible. Introduce this section.
 
-For the translation process, we implement a function that given Elixir \gls{ast} 
-code that corresponds to an L2 program (i.e. its \gls{dsl}), yields a list of pairs
-with the expression in L1 that represents its resulting value, and an L1 statement that 
-models its meaning:
+For the translation process, we implement a function that given Elixir \gls{ast}
+code that corresponds to an L2 program (i.e. its \gls{dsl}), yields a list of
+pairs with the expression in L1 that represents its resulting value, and an L1
+statement that models its meaning:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec translate_l2_exp(L2Exp.ast) 
   :: [{L1Exp.ast, L1Stm.ast}]
 \end{lstlisting}
 
-As in the previous \gls{dsl} translations, its definition syntax matches closely the 
-formal version, as in this example for assignment with pattern matching:
+As in the previous \gls{dsl} translations, its definition syntax matches closely
+the formal version, as in this example for assignment with pattern matching:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 def translate_l2_exp({:=, _, [p, e]}) do
@@ -237,8 +255,8 @@ def translate_l2_exp({:=, _, [p, e]}) do
 end
 \end{lstlisting}
 
-where we also have implemented an auxiliary function to obtain the variables of a 
-pattern, as L1 variable expressions:
+where we also have implemented an auxiliary function to obtain the variables of
+a pattern, as L1 variable expressions:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec vars(Pat.ast) :: MapSet.t(L1Exp.ast)
@@ -287,7 +305,6 @@ def verify_l2(env, e) do
 end
 \end{lstlisting}
 
-Note that each possible path of the translation must be verified in an independent
-proof context, so one option is to wrap each one into a \verb|block| statement.
-
-\textcolor{red}{TODO}: paths with a common subpath yield to repeated error reports.
+Note that each possible path of the translation must be verified in an
+independent proof context, so one option is to wrap each one into a \verb|block|
+statement.

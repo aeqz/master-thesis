@@ -41,3 +41,4 @@
 {"rule":"EN_A_VS_AN","sentence":"^\\QA more complex usage example is shown in Appendix \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, which corresponds to a \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q problem instead of an \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q one.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qmeaning that there exists an assignment for the defined variables that satisfies the specified formulas, thus the graph has a Hamiltonian path.\\E$"}
 {"rule":"EN_A_VS_AN","sentence":"^\\QThis appendix shows a longer usage example of our developed \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q to communicate with an smt solver from Elixir.\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QL0 is intended to be implemented as Elixir expressions that send SMT-LIB commands to an smt solver.\\E$"}

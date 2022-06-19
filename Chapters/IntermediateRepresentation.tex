@@ -586,13 +586,13 @@ addressed in future work.
 \section{Implementation}
 \label{ir:l1implementation}
 
-In this section, we present our implementation for the L2 verification \gls{ir}
+In this section, we present our implementation for the L1 verification \gls{ir}
 in Elixir.
 
 \subsection{Overview}
 \label{ir:dslexample}
 
-We have implemented a \gls{dsl} in Elixir to write and verify L2 programs. The
+We have implemented a \gls{dsl} in Elixir to write and verify L1 programs. The
 macro \verb|with_local_env/1| provides a default environment with a fresh Z3
 connection that is injected as the first argument of its inner \gls{dsl} macros
 (i.e. \verb|assert/2|, \verb|havoc/2|, etc.) and is closed once all of them have
@@ -692,7 +692,7 @@ previous \verb|push|, and this must be always reflected in our state to be
 synchronized.
 
 Then, we also implement a function to translate Elixir \gls{ast} corresponding
-to L2 statements into L0 code:
+to L1 statements into L0 code:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec translate_l1_stm(L1Stm.ast) :: L0Exp.ast
