@@ -1,30 +1,71 @@
 \chapter{DSL example: Hamiltonian path problem}
 \label{Appendix:hamiltonian}
 
-\textcolor{red}{TODO}: explain
+This appendix shows a longer usage example of our developed \gls{dsl} to 
+communicate with an \acrshort{smt} solver from Elixir. It corresponds to the
+\gls{csp} of checking whether a given graph has a Hamiltonian path or not.
+
+A Hamiltonian path is a path that visits each node exactly once, and it can be 
+expressed as a \gls{sat} problem by specifying it as a \gls{csp} and encoding 
+its constraints as propositional formulas.
+
+We are going to write it as an Elixir script (i.e. code that is not provided 
+under a \verb|module| and can be directly evaluated by \verb|iex|). It will
+involve some Elixir usage that has not been presented in this document (e.g. 
+the \verb|pin| operator, the \verb|pipe| operator, comprehensions, etc.), but we
+hope that the comments will clarify the idea:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 import SmtLib
 
+# The problem input: a graph
 nodes = 0..3
-
 edges = MapSet.new([{0, 1}, {1, 2}, {2, 3}])
 
-# Variable identifiers
+# A variable identifier for every node and path position
+# to denote propositional variables meaning that node 
+# n is in position i
 node_in_position =
   for n <- nodes, {_, i} <- Enum.with_index(nodes) do
     {{n, i}, String.to_atom("p_#{n}_#{i}")}
   end
   |> Map.new()
 
+# We use a default and self-managed solver connection
 with_local_conn do
-  # Declare the variables
-  for n <- nodes, {_, i} <- Enum.with_index(nodes) do
-    declare_const [{node_in_position[{n, i}], Bool}]
+
+  # Declare all the variables with sort Bool
+  for {_, v} <- node_in_position do
+    declare_const [{v, Bool}]
+  end
+
+  
+  # This comprehension stands for pairs of 
+  # variables corresponding to different nodes 
+  # at the same position
+  for {{m, i}, v1} <- node_in_position, 
+      {{n, ^i}, v2} <- node_in_position, 
+      n !== m do
+      # Nodes do not collide in their positions
+    assert !(v1 && v2)
+  end
+
+  # This comprehension stands for pairs of variables 
+  # corresponding to different nodes in adjacent path 
+  # positions that are not adjacent in the graph
+  for {{m, i}, v1} <- node_in_position,
+      j <- [i + 1],
+      {{n, ^j}, v2} <- node_in_position,
+      n !== m,
+      {m, n} not in edges do
+    # Non adjacent nodes cannot be in adjacent positions 
+    assert v1 ~> !v2
   end
 
   # Every node is at least in some position
   for n <- nodes do
+    # This reduce generates a disjunction with 
+    # all the positions of the node
     assert Enum.reduce(
              Enum.with_index(nodes),
              quote(do: false),
@@ -37,25 +78,19 @@ with_local_conn do
            )
   end
 
-  # Nodes do not collide in their positions
-  for m <- nodes, 
-      n <- nodes, n !== m, 
-      {_, i} <- Enum.with_index(nodes) do
-    assert !(node_in_position[{m, i}] 
-      && node_in_position[{n, i}])
-  end
-
-  # Non adjacent nodes cannot be in adjacent positions
-  for m <- nodes,
-      n <- nodes,
-      n !== m,
-      not ({m, n} in edges or {n, m} in edges),
-      {_, i} <- Enum.with_index(Enum.drop(nodes, 1)) do
-    assert node_in_position[{m, i}] 
-      ~> !node_in_position[{n, i + 1}]
-  end
-
   check_sat
 end
+
+# Print the result of the block, that is,
+# the result of check_sat
 |> IO.inspect()
 \end{lstlisting}
+
+And, for the given problem input, its evaluation prints 
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+{:ok, :sat}
+\end{lstlisting}
+
+meaning that there exists an assignment for the defined variables that satisfies
+the specified formulas, thus the graph has a Hamiltonian path.
