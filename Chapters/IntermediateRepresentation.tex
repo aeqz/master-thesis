@@ -309,8 +309,8 @@ because of their specific short-circuit semantics in Elixir:
 \quad\quad\quad\addE~t = t_2\\
 \quad\quad\elseW~\whenUnsatW~\gamma';\addE~\neg\isboolean{t_2}~\doW\\
 \quad\quad\quad\addE~\isboolean{t};\\
-\quad\quad\quad\addE~\booleanvalue{t} = \booleanvalue{t_1} \\
-\quad\phantom{\quad\quad\addE~\booleanvalue{t}} \land \booleanvalue{t_2}\\
+\quad\quad\quad\addE~\booleanvalue{t} = \\
+\quad\quad\quad\quad(\booleanvalue{t_1} \land \booleanvalue{t_2})\\
 \quad\quad\elseW~\failE\\
 \elseW~\failE
 \end{array}
@@ -352,8 +352,8 @@ The translation corresponding to $\mathbf{or}$ is analogous:
 \quad\quad\quad\addE~t = t_2\\
 \quad\quad\elseW~\whenUnsatW~\gamma';\addE~\neg\isboolean{t_2}~\doW\\
 \quad\quad\quad\addE~\isboolean{t};\\
-\quad\quad\quad\addE~\booleanvalue{t} = \booleanvalue{t_1} \\
-\quad\phantom{\quad\quad\addE~\booleanvalue{t}} \lor \booleanvalue{t_2}\\
+\quad\quad\quad\addE~\booleanvalue{t} = \\
+\quad\quad\quad\quad(\booleanvalue{t_1} \lor \booleanvalue{t_2})\\
 \quad\quad\elseW~\failE\\
 \elseW~\failE
 \end{array}

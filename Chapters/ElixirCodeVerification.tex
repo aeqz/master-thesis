@@ -157,12 +157,14 @@ The translation of $\caseE$ expressions is more complex:
 \trEXP{\caseE~E~\doW~\overline{P_i~\whenE~f_i \rightarrow E_i}^n~\Wend}\\
 \qquad = \left[ \begin{array}{l}
 (S_j;\\
-\assertE~(\andE{e_{1,j}}{f_1})~\textbf{or}~\cdots~\textbf{or}~(\andE{e_{n,j}}{f_n}); \\
-\assumeE~(\textbf{not}~(e_{1,j}~\textbf{and}~f_1))~\textbf{and}~\cdots~\textbf{and}~(\textbf{not}~(e_{i-1,j}~\textbf{and}~f_{i-1})); \\
-\assumeE~e_{i,j}~\textbf{and}~f_{i};\\
-\havocE~y_{i,1};\\
+\havocE~y_{1};\\
 \vdots\\
-\havocE~y_{i,t_i};\\
+\havocE~y_{t};\\
+\assertE~(\andE{e_{1,j}}{(\orE{(\textbf{not}~e_j~\texttt{===}~P_1)}{f_1})})\textbf{or}~\cdots\\
+\quad\quad\textbf{or}~(\andE{e_{n,j}}{(\orE{(\textbf{not}~e_j~\texttt{===}~P_n)}{f_n})}); \\
+\assumeE~(\textbf{not}~(e_{1,j}~\textbf{and}~(\orE{(\textbf{not}~e_j~\texttt{===}~P_1)}{f_1})))~\textbf{and}~\cdots\\
+\quad\quad\textbf{and}~(\textbf{not}~(e_{i-1,j}~\textbf{and}~(\orE{(\textbf{not}~e_j~\texttt{===}~P_{i - 1})}{f_{i - 1}}))); \\
+\assumeE~e_{i,j}~\textbf{and}~(\orE{(\textbf{not}~e_j~\texttt{===}~P_{i})}{f_{i}});\\
 \assumeE~e_j~\texttt{===}~P_j; \\
 S_{i,k}', e_{i,k}')
 \end{array}  \middle\vert
@@ -176,7 +178,7 @@ k \leftarrow [1..s_i] \\
 \textbf{where} & [(S_1,e_1),\ldots,(S_m,e_m)] = \trEXP{E} \\
 & \forall i \in \{1..n\}: [(S'_{i,1},e'_{i,1}),\ldots,(S'_{i,s_i},e'_{i,s_i})] = \trEXP{E_i} \\
 & \forall i \in \{1..n\}, j \in \{1..m\}: e_{i,j} = \trMatch{e_j}{P_i} \\
-& \forall i \in \{1..n\}, \{y_{i,1}, \ldots, y_{i,t_i}\} = \mathit{vars}(P_i) \\
+& \{y_{1}, \ldots, y_{t}\} = \bigcup_{i = 1}^n\mathit{vars}(P_i) \\
 \end{array}
 \end{array}
 \]
@@ -185,10 +187,11 @@ It can be described as, for each translation of $E$, for each branch and for
 each translation of the resulting expression of that branch:
 
 \begin{enumerate}
-  \item Check that at least one pattern and guard of holds.
-  \item Assume that no previous pattern and guard holds, and that the current one does.
-  \item Declare the involved variables for the pattern matching.
-  \item Assume that the pattern does match.
+  \item Declare the involved variables for every pattern matching. This is because guards $f_i$ may refer to variables bound in its pattern.
+  \item Check that at least one pattern and guard of holds. The guards $f_i$ are checked under the assumption that its pattern variables have been bound, which is a disjunction because there is no implication connective in L1 expressions.
+  \item Assume that no previous pattern and guard holds, with the same considerations explained above, and that the current one does.
+  \item Assume that the branch pattern does match.
+  \item Include the generated L1 statements for the expression corresponding to that branch.
 \end{enumerate}
 
 This models appropriately the short-circuit semantics of the \verb|case|
@@ -200,7 +203,8 @@ $\true$ after that, so it will not yield to validation failures.
 
 \textcolor{red}{TODO}
 
-Verification process, and also the Elixir code generation (remove ghosts).
+Verification process, and also the Elixir code generation (remove ghosts) and
+explain that \gls{ssa} form is required.
 
 \subsection{Extended user-defined functions}
 
@@ -285,13 +289,24 @@ end
 
 \textcolor{red}{TODO}: unfold if possible, and the verification process.
 
-By using the L1 verification function from Section \ref{ir:details}, we can
+We have also implemented a function to transform an L2 program into 
+\gls{ssa} form:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@spec l2_ssa(L2Exp.ast) :: L2Exp.ast
+\end{lstlisting}
+
+\textcolor{red}{TODO}: explain something about its implementation. We could
+not use Macro.traverse for it.
+
+By using first the function to transform L2 code into \gls{ssa} and then 
+the L1 verification function from Section \ref{ir:details}, we can
 define a verification function for L2 code as follows:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec verify_l2(Env.t(), L2Exp.ast()) :: [term()]
 def verify_l2(env, e) do
-  for {_, sem} <- translate_l2_exp(e) do
+  for {_, sem} <- translate_l2_exp(l2_ssa(e)) do
     L1Stm.eval(
       env,
       quote do
