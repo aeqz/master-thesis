@@ -27,6 +27,7 @@ following grammar:
 \begin{array}{rcll}
 \Exp{2} \ni E & ::= & e & \{ \textrm{L1 expression} \} \\
 & | & P = E & \{ \textrm{pattern matching} \} \\
+& | & \nilE & \{ \textrm{empty expression} \} \\
 & | & E_1; E_2 & \{ \textrm{sequence} \} \\
 & | & \caseE~E~\doW & \{ \textrm{case distinction} \} \\
 & & \quad P_1~\whenE~f_1 \rightarrow E_1 \\
@@ -88,6 +89,16 @@ $\true$ if and only if $e$ matches $P$. Its definition is as follows:
 
 Also, $\mathit{vars}(P)$ is a function to denote the $L1$ variable expressions
 that appear in a pattern $P$.
+
+The $\nilE$ expression is translated into an empty list:
+
+\[
+\trEXP{\nilE} = [(\skipE, [])]
+\]
+
+This is a discrepancy with Elixir as it should be translated into the atom 
+\verb|nil| but, as we have not modelled atoms for the moment, we set it as the
+empty list.
 
 L2 expressions that are contained within the syntax of L1 are translated as they
 are, but we generate an assertion to check if the singleton tuple which contains
@@ -249,6 +260,10 @@ low level verification language L0, as shown in Section \ref{sec:translationL0}
 with the $\trStm{\_}$ function, which has its semantics defined in terms of the
 $\gls{smt}$ problem.
 
+We also define a function $\mathit{elixir}(E)$ that turns an L2 expression $E$
+into its counterpart with all its $\ghostE$ subexpressions removed from every 
+sequence expression. If $E$ itself is one of them, then the result is $\nilE$. 
+
 \subsection{Verifying user-defined functions}
 
 We will also define formally a representation for a set of user-defined
@@ -317,11 +332,69 @@ shown in Section \ref{sec:verificationprocess}.
 
 \subsection{Unfolding user-defined functions}
 
-\textcolor{red}{TODO}
+To allow the user to define and use verification functions in a restricted way,
+because we have not dealt with termination concerns in this project, we extend 
+the L2 language with a new verification expression:
 
-Talk about generating ghost-free Elixir code.
+\[
+\begin{array}{rcll}
+\Exp{2} \ni E & ::= & & \\
+& | & \vdots \\
+& | & \unfoldE~f(E_1,\dots,E_n) & \{ \textrm{definition unfold} \} \\
+\end{array}
+\]
 
-Allowing L2 expressions in user-defined functions.
+It must be specially handled in the sequence expression translation, as 
+in the case of trailing $\ghostE$ expressions:
+
+\[
+\begin{array}{l}
+\trEXP{E;\unfoldE~f(E_1,\dots,E_k)}  = [(S_i;S'_j,e_i) \mid i \leftarrow [1..n], j \leftarrow [1..m]] \\
+\qquad 
+\begin{array}{ll}
+\textbf{where} & [(S_1,e_1),\dots,(S_n, e_n)] = \trEXP{E} \\
+\textbf{where} & [(S'_1,e'_1),\dots,(S'_m, e'_m)] = \trEXP{\unfoldE~f(E_1,\dots,E_k)} \\
+\end{array}
+\end{array}
+\]
+
+And its own translation also takes advantage of the $\caseE$ expression, as we did
+for user-defined function verification:
+
+\[
+\begin{array}{l}
+\trEXP{\unfoldE~f(E_1,\dots,E_n)} = \trEXP{E}\\
+\textbf{where } (\mathit{def}_1, \dots, \mathit{def}_k) = \Defs{f/n}\\
+\phantom{\textbf{where }} \mathit{def}_i = \left(\{ p_i \}  \quad (P_{i,1}, \dots, P_{i,n})~B_i \quad \{ q_i \} \right) \\
+\phantom{\textbf{where }} E = \left[\begin{array}{l}
+\caseE~\{E_1,\dots,E_n\}~\doW \\
+\quad \{P_{1,1},\dots,P_{1,n}\}~\whenE~p_1 \rightarrow\\ 
+\quad\quad \mathit{res} = \mathit{elixir}(B_1); \\
+\quad\quad \ghostE~\doW\\ 
+\quad\quad\quad\assumeE~res~\mathit{===}~f(E_1,\dots,E_n);\\
+\quad\quad\quad\assumeE~q_1\\
+\quad\quad \Wend\\
+\quad\vdots\\
+\quad \{P_{k,1},\dots,P_{k,n}\}~\whenE~p_k \rightarrow\\ 
+\quad\quad \mathit{res} = \mathit{elixir}(B_k); \\
+\quad\quad \ghostE~\doW\\ 
+\quad\quad\quad\assumeE~res~\mathit{===}~f(E_1,\dots,E_n);\\
+\quad\quad\quad\assumeE~q_k\\
+\quad\quad \Wend\\
+\Wend
+\end{array}
+\right]
+\end{array}
+\]
+
+\textcolor{red}{TODO}: deal with $E_i$ as L2, not as L1.
+
+In this case, in contrast with the generated $\caseE$ for verifying function
+definitions, the postconditions are assumed, and we do not add an extra branch
+that always holds because the function arguments are known.
+
+Also, the verification expressions are removed from the body expansions in order
+to avoid possible $\unfoldE$ expressions that lead to non-terminating recursion.
 
 \subsection{Termination}
 
