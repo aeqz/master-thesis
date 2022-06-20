@@ -232,11 +232,11 @@ $$\mathit{ssa}(E) = (x_1 = 2;x_2 = 3 + x_1;y_1 = x_2 * x_2)$$
 
 Then, we can obtain a single L1 statement that considers all the generated
 statements by wrapping them inside $\blockE$ expressions to be verified 
-independently:
+independently one after the other:
 
 \[
 \begin{array}{l}
-\mathit{verification}(E) = [\blockE~S_i \mid i \leftarrow [1..n]] \\
+\mathit{verification}(E) = \blockE~S_i;\dots;\blockE~S_n\\
 \qquad 
 \begin{array}{ll}
 \textbf{where} & [(S_1,e_1),\dots,(S_n, e_n)] = \trEXP{\mathit{ssa}(E)}
