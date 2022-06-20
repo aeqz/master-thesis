@@ -27,7 +27,7 @@ following grammar:
 \begin{array}{rcll}
 \Exp{2} \ni E & ::= & e & \{ \textrm{L1 expression} \} \\
 & | & P = E & \{ \textrm{pattern matching} \} \\
-& | & \nilE & \{ \textrm{empty expression} \} \\
+& | & \emptyE & \{ \textrm{empty sequence} \} \\
 & | & E_1; E_2 & \{ \textrm{sequence} \} \\
 & | & \caseE~E~\doW & \{ \textrm{case distinction} \} \\
 & & \quad P_1~\whenE~f_1 \rightarrow E_1 \\
@@ -49,10 +49,10 @@ Note that the guard expressions $f_1, \ldots, f_n$ correspond to L1 expressions,
 due to their restricted nature.
 
 This language models a subset of the Elixir programming language with L1
-expressions as their direct counterparts in Elixir, sequences as Elixir blocks,
-$\caseE$ expressions, and a simplified version of its pattern matching
-capabilities.  It also allows adding verification statements such as $\assertE$
-and $\assumeE$ within $\ghostE$ blocks.
+expressions as their direct counterparts in Elixir, the $\emptyE$ sequence and
+sequences as Elixir blocks, $\caseE$ expressions, and a simplified version of
+its pattern matching capabilities.  It also allows adding verification
+statements such as $\assertE$ and $\assumeE$ within $\ghostE$ blocks.
 
 \subsection{Translation into L1}
 
@@ -90,15 +90,15 @@ $\true$ if and only if $e$ matches $P$. Its definition is as follows:
 Also, $\mathit{vars}(P)$ is a function to denote the $L1$ variable expressions
 that appear in a pattern $P$.
 
-The $\nilE$ expression is translated into an empty list:
+The $\emptyE$ expression is translated into an empty list:
 
 \[
-\trEXP{\nilE} = [(\skipE, [])]
+\trEXP{\emptyE} = [(\skipE, [])]
 \]
 
-This is a discrepancy with Elixir as it should be translated into the atom 
-\verb|nil| but, as we have not modelled atoms for the moment, we set it as the
-empty list.
+This would be properly modeled as the atom \verb|nil| in Elixir, as it is the
+result of an empty \verb|block| but, as we have not modelled atoms for the
+moment, we set it as the empty list.
 
 L2 expressions that are contained within the syntax of L1 are translated as they
 are, but we generate an assertion to check if the singleton tuple which contains
@@ -262,9 +262,10 @@ $\gls{smt}$ problem.
 
 We also define a function $\mathit{elixir}(E)$ that turns an L2 expression $E$
 into its counterpart with all its $\ghostE$ subexpressions removed from every 
-sequence expression. If $E$ itself is one of them, then the result is $\nilE$. 
+sequence expression. If $E$ itself is one of them, then the result is $\emptyE$.
 
 \subsection{Verifying user-defined functions}
+\label{sec:verifyuserdefined}
 
 We will also define formally a representation for a set of user-defined
 functions with its different overloads, which correspond to Elixir functions
@@ -340,45 +341,50 @@ the L2 language with a new verification expression:
 \begin{array}{rcll}
 \Exp{2} \ni E & ::= & & \\
 & | & \vdots \\
-& | & \unfoldE~f(E_1,\dots,E_n) & \{ \textrm{definition unfold} \} \\
+& | & \unfoldE~f(e_1,\dots,e_n) & \{ \textrm{definition unfold} \} \\
 \end{array}
 \]
+
+where $e_i \in \Exp{1} \forall i. i\in \{1..n\}$.
 
 It must be specially handled in the sequence expression translation, as 
 in the case of trailing $\ghostE$ expressions:
 
 \[
 \begin{array}{l}
-\trEXP{E;\unfoldE~f(E_1,\dots,E_k)}  = [(S_i;S'_j,e_i) \mid i \leftarrow [1..n], j \leftarrow [1..m]] \\
+\trEXP{E;\unfoldE~f(e'_1,\dots,e'_k)}  = [(S_i;S'_j,e_i) \mid i \leftarrow [1..n], j \leftarrow [1..m]] \\
 \qquad 
 \begin{array}{ll}
 \textbf{where} & [(S_1,e_1),\dots,(S_n, e_n)] = \trEXP{E} \\
-\textbf{where} & [(S'_1,e'_1),\dots,(S'_m, e'_m)] = \trEXP{\unfoldE~f(E_1,\dots,E_k)} \\
+\textbf{where} & [(S'_1,\_),\dots,(S'_m, \_)] = \trEXP{\unfoldE~f(e'_1,\dots,e'_k)} \\
 \end{array}
 \end{array}
 \]
 
-And its own translation also takes advantage of the $\caseE$ expression, as we did
+Also, the $\mathit{elixir}$ function should deal with $\unfoldE$ expressions 
+similarly as it deals with $\ghostE$ ones.
+
+Its own translation also takes advantage of the $\caseE$ expression, as we did
 for user-defined function verification:
 
 \[
 \begin{array}{l}
-\trEXP{\unfoldE~f(E_1,\dots,E_n)} = \trEXP{E}\\
+\trEXP{\unfoldE~f(e_1,\dots,e_n)} = \trEXP{E}\\
 \textbf{where } (\mathit{def}_1, \dots, \mathit{def}_k) = \Defs{f/n}\\
 \phantom{\textbf{where }} \mathit{def}_i = \left(\{ p_i \}  \quad (P_{i,1}, \dots, P_{i,n})~B_i \quad \{ q_i \} \right) \\
 \phantom{\textbf{where }} E = \left[\begin{array}{l}
-\caseE~\{E_1,\dots,E_n\}~\doW \\
+\caseE~\{e_1,\dots,e_n\}~\doW \\
 \quad \{P_{1,1},\dots,P_{1,n}\}~\whenE~p_1 \rightarrow\\ 
 \quad\quad \mathit{res} = \mathit{elixir}(B_1); \\
 \quad\quad \ghostE~\doW\\ 
-\quad\quad\quad\assumeE~res~\mathit{===}~f(E_1,\dots,E_n);\\
+\quad\quad\quad\assumeE~res~\mathit{===}~f(e_1,\dots,e_n);\\
 \quad\quad\quad\assumeE~q_1\\
 \quad\quad \Wend\\
 \quad\vdots\\
 \quad \{P_{k,1},\dots,P_{k,n}\}~\whenE~p_k \rightarrow\\ 
 \quad\quad \mathit{res} = \mathit{elixir}(B_k); \\
 \quad\quad \ghostE~\doW\\ 
-\quad\quad\quad\assumeE~res~\mathit{===}~f(E_1,\dots,E_n);\\
+\quad\quad\quad\assumeE~res~\mathit{===}~f(e_1,\dots,e_n);\\
 \quad\quad\quad\assumeE~q_k\\
 \quad\quad \Wend\\
 \Wend
@@ -387,8 +393,6 @@ for user-defined function verification:
 \end{array}
 \]
 
-\textcolor{red}{TODO}: deal with $E_i$ as L2, not as L1.
-
 In this case, in contrast with the generated $\caseE$ for verifying function
 definitions, the postconditions are assumed, and we do not add an extra branch
 that always holds because the function arguments are known.
@@ -396,17 +400,64 @@ that always holds because the function arguments are known.
 Also, the verification expressions are removed from the body expansions in order
 to avoid possible $\unfoldE$ expressions that lead to non-terminating recursion.
 
+It would be possible to define it allowing $L2$ expressions as arguments, but we
+have taken this approach because the resulting translation is simpler and
+$\unfoldE~f(E)$ with $E \in \Exp{2}$ can be expressed as $(e =
+E;\unfoldE~f(e))$.
+
 \subsection{Termination}
 
-\textcolor{red}{TODO}
+Regarding termination, we are not verifying whether a recursive function 
+definition terminates or not, which could be addressed by means of a ranking
+function over its arguments.
 
-Show our current ideas about termination using term sizes.
+For this purpose, we have proposed a set of axioms based on $\Term$ types in
+Section \ref{sec:termsize}, which can help in proving that the destructuring of
+a term always leads to smaller ones.
 
 \section{Implementation}
 
-\textcolor{red}{TODO}: show examples in a separate section before this one if possible. Introduce this section.
+This section shows our early implementation of the system and the current
+\gls{api} for its usage. It also explains some of its implementation details 
+briefly.
 
-For the translation process, we implement a function that given Elixir \gls{ast}
+\subsection{Overview}
+
+The package that we provide, named \verb|Verixir|, can be imported 
+with the \verb|use| macro in order to add the capabilities of our system.
+
+The preconditions can be specified with \verb|module| attributes as in the 
+following example:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+defmodule Example do
+  use Verixir 
+
+  @verifier requires is_integer(x)
+  defv dup(x) do
+    x + x
+  end
+
+  @verifier ensures uses_dup(y) === 2 * y
+  defv uses_dup(y) when is_integer(y) do
+    unfold dup(y)
+    dup(y)
+  end
+end
+\end{lstlisting}
+
+which verifies during compilation and leaves in there the function definitions
+without verification code to be executed.
+
+If we change the literal \verb|2| from the example by \verb|3|, we get the
+following error:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+      \textcolor{red}{[error] Verification: Assert failed uses_dup(y_1) === 3 * y_1}
+\end{Verbatim}
+
+\subsection{Translation}
+For the translation process, we have implemented a function that given Elixir \gls{ast}
 code that corresponds to an L2 program (i.e. its \gls{dsl}), yields a list of
 pairs with the expression in L1 that represents its resulting value, and an L1
 statement that models its meaning:
@@ -417,7 +468,7 @@ statement that models its meaning:
 \end{lstlisting}
 
 As in the previous \gls{dsl} translations, its definition syntax matches closely
-the formal version, as in this example for assignment with pattern matching:
+the formal version, like in this example for assignment with pattern matching:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 def translate_l2_exp({:=, _, [p, e]}) do
@@ -444,7 +495,7 @@ end
 \end{lstlisting}
 
 where we also have implemented an auxiliary function to obtain the variables of
-a pattern, as L1 variable expressions:
+a pattern, as L1 variable expressions
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec vars(Pat.ast) :: MapSet.t(L1Exp.ast)
@@ -471,21 +522,36 @@ def translate_match({:|, _, [p1, p2]}, e) do
 end
 \end{lstlisting}
 
-\textcolor{red}{TODO}: unfold if possible, and the verification process.
+\subsection{Verification}
 
-We have also implemented a function to transform an L2 program into 
-\gls{ssa} form:
+As a helper function for verification, we have also implemented one to transform
+an L2 program into \gls{ssa} form:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec l2_ssa(L2Exp.ast) :: L2Exp.ast
 \end{lstlisting}
 
-\textcolor{red}{TODO}: explain something about its implementation. We could
-not use Macro.traverse for it.
+We could not use the built-in \verb|Macro.traverse/4| for it, which would be as
+usual when transforming \gls{ast} with state, because the pattern matching case
+was difficult to handle. It was easier in contrast by defining an explicit
+recursive function:
 
-By using first the function to transform L2 code into \gls{ssa} and then 
-the L1 verification function from Section \ref{ir:details}, we can
-define a verification function for L2 code as follows:
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+defp ssa_rec({:=, _, [p, e]}, state) do
+  {e, state} = ssa_rec(e, state)
+  state = new_version_for_vars(var_names(p), state)
+  {p, state} = ssa_rec(p, state)
+
+  {
+    {:=, [], [p, e]},
+    state
+  }
+end
+\end{lstlisting}
+
+By using first the function to transform L2 code into \gls{ssa} and then the L1
+verification function from Section \ref{ir:details}, we can define a
+verification function for L2 code as follows:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec verify_l2(Env.t(), L2Exp.ast()) :: [term()]
@@ -506,4 +572,84 @@ end
 
 Note that each possible path of the translation must be verified in an
 independent proof context, so one option is to wrap each one into a \verb|block|
-statement.
+statement. Another one could be to use a fresh \acrshort{smt} solver connection.
+
+\subsection{User-defined functions verification}
+
+In order to provide an \gls{api} for programmers to use this verification system
+in their own Elixir \verb|module|s, we have defined a module that can be
+imported by means of the \verb|use| built-in macro. This section deals with
+Elixir concepts that have not been explained in this document.
+
+First, we have defined a macro \verb|defv| to write functions involved in the
+verification process. Those defined with this macro are collected during the
+\verb|module| compilation, where preconditions and postconditions are specified
+as \verb|module attributes|, replaced by regular function definitions with no
+verification code, and then verified by translating them into $\caseE$
+expressions as explained in Section \ref{sec:verifyuserdefined}.
+
+The function to remove verification code has been implemented as follows:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@spec remove_verification(L2Exp.ast()) :: L2Exp.ast()
+def remove_verification(ast) do
+  Macro.prewalk(ast, fn
+    {:__block__, meta, es} ->
+      {:__block__, meta,
+       Enum.reject(es, fn
+         {:unfold, _, _} -> true
+         {:ghost, _, _} -> true
+         _ -> false
+       end)}
+
+    {:unfold, _, _} ->
+      {:__block__, [], []}
+
+    {:ghost, _, _} ->
+      {:__block__, [], []}
+
+    other ->
+      other
+  end)
+end
+\end{lstlisting}
+
+\subsection{User-defined functions unfolding}
+
+To allow our expression for unfolding user-defined functions, we have added to
+the translation function and environment with all the verification function
+definitions of the \verb|module|, and new a case for it:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+def translate_l2_exp(
+  user_defined, 
+  {:unfold, _, [{f, _, args}]}
+) do
+  defs = user_defined[{f, length(args)}]
+
+  translate(
+    user_defined,
+    {:case, [], [quote(do: {unquote_splicing(args)}), [do:
+      List.flatten(
+        for d <- defs do
+          quote do
+            {unquote_splicing(d.args)}
+            when unquote(d.pre) ->
+              res = unquote(
+                  remove_verification(d.body)
+                )
+
+              ghost do
+                assume res === unquote(f)(
+                    unquote_splicing(args)
+                  )
+
+                assume unquote(d.post)
+              end
+          end
+        end
+      )
+    ]]}
+  )
+end
+\end{lstlisting} 

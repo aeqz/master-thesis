@@ -44,3 +44,8 @@
 {"rule":"EN_A_VS_AN","sentence":"^\\QL0 is intended to be implemented as Elixir expressions that send SMT-LIB commands to an smt solver.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere the \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q denote a specified precondition and a postcondition, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q are the argument patterns and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is its defined body.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere the \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q denote a specified precondition and a postcondition, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q are the parameter patterns and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is its defined body.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QIn order to provide an \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q for programmers to use this verification system in their own Elixir \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Qs, we define a module that can be imported by means of the \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q built-in macro.\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QIn order to provide an \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q for programmers to use this verification system in their own Elixir \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Qs, we have defined a module that can be imported by means of the \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q built-in macro.\\E$"}
+{"rule":"IT_VBZ","sentence":"^\\QIt also explain some of its implementation details briefly.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhich verifies during compilation and leaves in there the function definitions without verification code to be executed.\\E$"}

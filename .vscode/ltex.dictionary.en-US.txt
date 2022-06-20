@@ -54,3 +54,5 @@ unsatisfactibility
 unsatisfiability
 subpath
 postconditions
+destructuring
+dup
