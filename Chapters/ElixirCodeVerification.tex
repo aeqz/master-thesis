@@ -14,7 +14,9 @@ together with some of its implementation details.
 
 \section{The L2 verification language}
 
-\textcolor{red}{TODO}
+In this section, we define the syntax of the L2 verification language, together
+with some procedures and definitions with the aim to verify sequential Elixir
+code.
 
 \subsection{Syntax}
 
@@ -225,8 +227,8 @@ variable names, but this would be problematic in the generated L1 counterpart,
 we consider a function $ssa$ to transform an L2 expression into \gls{ssa} form
 as in the following example:
 
-$$E =  (x = 2;x = 3 + x; y = x * x * z)$$
-$$\mathit{ssa}(E) = (x_1 = 2;x_2 = 3 + x_1;y_1 = x_2 * x_2 * z)$$
+$$E =  (x = 2;x = 3 + x; y = x * x)$$
+$$\mathit{ssa}(E) = (x_1 = 2;x_2 = 3 + x_1;y_1 = x_2 * x_2)$$
 
 Then, we can obtain a single L1 statement that considers all the generated
 statements by wrapping them inside $\blockE$ expressions to be verified 
@@ -243,7 +245,7 @@ independently:
 \]
 
 Finally, the resulting expression from our \gls{ir} can be translated into our
-low level verification language L0 as shown in Section \ref{sec:translationL0}
+low level verification language L0, as shown in Section \ref{sec:translationL0}
 with the $\trStm{\_}$ function, which has its semantics defined in terms of the
 $\gls{smt}$ problem.
 
@@ -306,12 +308,12 @@ expression, using the guards to assume the preconditions and its branch pattern
 matching to allow using pattern matching also in the function parameters.
 
 Also, a branch at the end that always succeeds is required because, as the 
-function parameters are unknown at this point, it is not possible to know in 
+function arguments are unknown at this point, it is not possible to know in 
 advance if no branch will match. 
 
 A set of function overloaded definitions can be verified by applying
 $\trDef{\_}$ to each one of them and also applying the verification process
-shown in \ref{sec:verificationprocess}.
+shown in Section \ref{sec:verificationprocess}.
 
 \subsection{Unfolding user-defined functions}
 
