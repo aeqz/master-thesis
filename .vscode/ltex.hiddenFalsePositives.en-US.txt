@@ -42,3 +42,4 @@
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qmeaning that there exists an assignment for the defined variables that satisfies the specified formulas, thus the graph has a Hamiltonian path.\\E$"}
 {"rule":"EN_A_VS_AN","sentence":"^\\QThis appendix shows a longer usage example of our developed \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q to communicate with an smt solver from Elixir.\\E$"}
 {"rule":"EN_A_VS_AN","sentence":"^\\QL0 is intended to be implemented as Elixir expressions that send SMT-LIB commands to an smt solver.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere the \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q denote a specified precondition and a postcondition, \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q are the argument patterns and \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is its defined body.\\E$"}

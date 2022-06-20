@@ -3,7 +3,14 @@
 
 \chapterquote{Do not fear mistakes - there are none}{Miles Davis}
 
-\textcolor{red}{TODO}
+This chapter shows a system to verify code of the Elixir programming language.
+First, we define a formal language to model a subset of sequential Elixir code
+which also allows introducing ghost verification conditions. Then we show how to
+verify it by means of the \gls{ir} defined in Chapter
+\ref{cap:intermediateRepresentation}.
+
+We also show an overview of our implementation, written in Elixir itself,
+together with some of its implementation details.
 
 \section{The L2 verification language}
 
@@ -38,6 +45,12 @@ following grammar:
 Note that the guard expressions $f_1, \ldots, f_n$ correspond to L1 expressions,
 due to their restricted nature.
 
+This language models a subset of the Elixir programming language with L1
+expressions as their direct counterparts in Elixir, sequences as Elixir blocks,
+$\caseE$ expressions, and a simplified version of its pattern matching
+capabilities.  It also allows adding verification statements such as $\assertE$
+and $\assumeE$ within $\ghostE$ blocks.
+
 \subsection{Translation into L1}
 
 In the following, given a set $A$, we use the notation $[A]$ to denote the set
@@ -50,7 +63,9 @@ Let us define a function: $\trEXP{\_} : \Exp{2} \rightarrow [\Stm \times
 \Exp{1}]$ that, given an expression $E$ in the source language, generates a
 sequence of pairs $(S, e)$ where $S$ is the L1 statement that models the
 semantics of $E$, and $e$ is a L1 expression that represents the result to which
-$E$ is evaluated.
+$E$ is evaluated. The reason behind translating an L2 expression into a sequence
+is that control flow constructs such as $\caseE$ may yield to different possible
+execution paths. 
 
 We need an auxiliary function $\trMatch{\_}{\_} : \Exp{1} \times \Pat
 \rightarrow \Exp{1}$ that, given an L1 expression $e$ and a pattern $P$, returns
@@ -77,7 +92,7 @@ are, but we generate an assertion to check if the singleton tuple which contains
 that expression is a tuple. This will force to introduce the expression in the
 generated L1 statements to be verified. Otherwise, bad formed expressions at the
 top level whose translation yields to verification failures may be ignored
-during the L2 translation (e.g. \verb|true + 2|):
+during the translation (e.g. \verb|true + 2|):
 
 \[
 \trEXP{e} = [(\assertE~\textit{is\mbox{-}tuple}(\{e\}), e)]
@@ -87,7 +102,7 @@ Another approach would be to extend the L1 syntax with a new statement that just
 checks an L1 expression.
 
 A $\ghostE$ expression is translated into an arbitrary $L1$ expression, for
-example the empty list, and the provided $L1$ statement as its meaning:
+example the empty list, and the provided $L1$ statement as its semantics:
 
 \[
 \trEXP{\ghostE~\doW~S~\Wend} = [(S, [])]
@@ -119,9 +134,9 @@ equality between $P$ and $E$.
 
 In order to translate a sequence of expressions $E_1;E_2$ we have to append 
 every statement generated from the translation of $E_2$ to every statement 
-generated from the translation of $E_1$. We must also deal carefully with
-$\ghostE$ expressions because, as its translation also returns an L1 expression,
-it must be skipped in order to avoid altering the semantics of a block.
+generated from the translation of $E_1$. We must deal carefully with $\ghostE$
+expressions because, as its translation also returns an L1 expression, it must
+be skipped in order to avoid altering the semantics of a block.
 
 This will be its translation when the last expression is a $\ghostE$ one, taking
 into account that \verb|;| is associative:
@@ -188,7 +203,7 @@ each translation of the resulting expression of that branch:
 
 \begin{enumerate}
   \item Declare the involved variables for every pattern matching. This is because guards $f_i$ may refer to variables bound in its pattern.
-  \item Check that at least one pattern and guard of holds. The guards $f_i$ are checked under the assumption that its pattern variables have been bound, which is a disjunction because there is no implication connective in L1 expressions.
+  \item Check that at least one pattern and guard holds. The guards $f_i$ are checked under the assumption that its pattern variables have been bound, which is a disjunction because there is no implication connective in L1 expressions.
   \item Assume that no previous pattern and guard holds, with the same considerations explained above, and that the current one does.
   \item Assume that the branch pattern does match.
   \item Include the generated L1 statements for the expression corresponding to that branch.
@@ -200,13 +215,105 @@ and guard will make the hypothesis state inconsistent and everything would be
 $\true$ after that, so it will not yield to validation failures.
 
 \subsection{Verification process}
+\label{sec:verificationprocess}
 
-\textcolor{red}{TODO}
+We will verify an L2 expression by verifying its corresponding translation into
+or \gls{ir}.
 
-Verification process, and also the Elixir code generation (remove ghosts) and
-explain that \gls{ssa} form is required.
+First, for the verification of an L2 expression, as we want to allow reusing 
+variable names, but this would be problematic in the generated L1 counterpart,
+we consider a function $ssa$ to transform an L2 expression into \gls{ssa} form
+as in the following example:
 
-\subsection{Extended user-defined functions}
+$$E =  (x = 2;x = 3 + x; y = x * x * z)$$
+$$\mathit{ssa}(E) = (x_1 = 2;x_2 = 3 + x_1;y_1 = x_2 * x_2 * z)$$
+
+Then, we can obtain a single L1 statement that considers all the generated
+statements by wrapping them inside $\blockE$ expressions to be verified 
+independently:
+
+\[
+\begin{array}{l}
+\mathit{verification}(E) = [\blockE~S_i \mid i \leftarrow [1..n]] \\
+\qquad 
+\begin{array}{ll}
+\textbf{where} & [(S_1,e_1),\dots,(S_n, e_n)] = \trEXP{\mathit{ssa}(E)}
+\end{array}
+\end{array}
+\]
+
+Finally, the resulting expression from our \gls{ir} can be translated into our
+low level verification language L0 as shown in Section \ref{sec:translationL0}
+with the $\trStm{\_}$ function, which has its semantics defined in terms of the
+$\gls{smt}$ problem.
+
+\subsection{Verifying user-defined functions}
+
+We will also define formally a representation for a set of user-defined
+functions with its different overloads, which correspond to Elixir functions
+that a user can define in an Elixir \verb|module|.
+
+A single function definition of a function with arity $n$ is stated as
+
+\[
+\mathit{def} \equiv \left(\{ p \}  \quad (P_1, \dots, P_n)~B \quad \{ q \} \right)
+\]
+
+where the $p \in \Exp{1}$ and $q \in \Exp{1}$ denote a specified precondition
+and a postcondition, $P_1, \dots, P_n$ are the parameter patterns and $B \in
+\Exp{2}$ is its defined body.
+
+Given a function named $f$ with arity $n$, we denote its overloaded definitions
+as $\Defs{f/n}$ = $(\mathit{def}_1,\dots,\mathit{def}_k)$, where its definition
+order matters. For each function, we are going to translate its definitions into
+a $\caseE$ L2 expression that models them:
+
+\[
+\begin{array}{l}
+\trDef{f/n} = \left[ \begin{array}{l}
+\ghostE~\doW\\
+\quad\havocE~\mathit{arg}_1;\\
+\quad\vdots\\
+\quad\havocE~\mathit{arg}_n\\
+\Wend;\\
+\caseE~\{\mathit{arg}_1,\dots,\mathit{arg}_n\}~\doW \\
+\quad \{P_{1,1},\dots,P_{1,n}\}~\whenE~p_1 \rightarrow\\ 
+\quad\quad \mathit{res} = B_1; \\
+\quad\quad \ghostE~\doW\\ 
+\quad\quad\quad\assumeE~res~\mathit{===}~f(\mathit{arg}_1,\dots,\mathit{arg}_n);\\
+\quad\quad\quad\assertE~q_1\\
+\quad\quad \Wend\\
+\quad\vdots\\
+\quad \{P_{k,1},\dots,P_{k,n}\}~\whenE~p_k \rightarrow\\ 
+\quad\quad \mathit{res} = B_k; \\
+\quad\quad \ghostE~\doW\\ 
+\quad\quad\quad\assumeE~res~\mathit{===}~f(\mathit{arg}_1,\dots,\mathit{arg}_n);\\
+\quad\quad\quad\assertE~q_k\\
+\quad\quad \Wend\\
+\quad \{\mathit{arg}_1,\dots,\mathit{arg}_n\} \rightarrow\\
+\quad\quad\true\\ 
+\Wend
+\end{array}
+\right]\\
+\textbf{where } (\mathit{def}_1, \dots, \mathit{def}_k) = \Defs{f/n}\\
+\phantom{\textbf{where }} \mathit{def}_i = \left(\{ p_i \}  \quad (P_{i,1}, \dots, P_{i,n})~B_i \quad \{ q_i \} \right) 
+\end{array}
+\]
+
+We have used the fact that the rules in Elixir to select which function
+definition takes effect are similar to those of the Elixir \verb|case|
+expression, using the guards to assume the preconditions and its branch pattern
+matching to allow using pattern matching also in the function parameters.
+
+Also, a branch at the end that always succeeds is required because, as the 
+function parameters are unknown at this point, it is not possible to know in 
+advance if no branch will match. 
+
+A set of function overloaded definitions can be verified by applying
+$\trDef{\_}$ to each one of them and also applying the verification process
+shown in \ref{sec:verificationprocess}.
+
+\subsection{Unfolding user-defined functions}
 
 \textcolor{red}{TODO}
 
