@@ -2,11 +2,9 @@
 \label{cap:preliminaries}
 
 This chapter introduces some required topics and tools that are a basis to our
-project.
-
-On the one hand, Elixir is the programming language that is the verification
-subject of this document and, at the same time, the one in which our
-implementation has been coded.
+project. On the one hand, Elixir is the programming language that is the
+verification subject of this document and, at the same time, the one in which
+our implementation has been coded.
 
 On the other hand, our verification system relies on the \gls{smt} problem and
 its encoding in SMT-LIB, a standard language and interface to interact with
@@ -16,14 +14,14 @@ theorem provers such as Z3.
 
 Elixir is a general-purpose programming language that runs on the Erlang Virtual
 Machine, also called BEAM, where also programs written in the Erlang language
-run. Both of them share some features, like their actor-based concurrency model,
+run. Both of them share some features, like an actor-based concurrency model,
 and have a native capability to interoperate between them. Although Elixir is
 younger than Erlang, this has allowed the former to be part of an ecosystem
 which has been developed across more than three decades.
 
-We have chosen such a programming language for this research because, first, it
-is a modern programming language ready to be used in the industry.  Second, it
-has the unusual property in formal verification to be dynamically typed, but its
+We have chosen Elixir for this research because, first, it is a modern
+programming language ready to be used in the industry.  Second, it has the
+unusual property in formal verification to be dynamically typed, but its
 functional programming principles will make it easier to reason about. Finally,
 its metaprogramming capabilities will allow us to extend it according to our
 needs without requiring us to modify its compiler.
@@ -37,9 +35,9 @@ subset that is studied later in this document for its verification, and also its
 metaprogramming mechanism based on macros, on top of which our proposed
 verification system has been implemented.
 
-The following examples will be shown in the Elixir \gls{repl}, called
-\verb|iex|, where \verb|iex>| represents its default prompt and an introduced
-expression is followed by the result such that it evaluates:
+The following examples will be shown in the Elixir \gls{repl}, named \verb|iex|,
+where \verb|iex>| represents its default prompt and an introduced expression is
+followed by the result that it evaluates to:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> "Hello world"
@@ -103,11 +101,10 @@ true
 
 The \verb|===|, \verb|!==|, \verb|and| and \verb|or| operators are the so-called
 \textit{strict} version of their respective counterparts \verb|==|, \verb|!=|,
-\verb|&&| and \verb+||+, but we are not going to deal with them for the moment.
+\verb|&&| and \verb+||+, but we are not going to deal with them in this project.
 
 Also, \verb|boolean| values are in fact a special case for \verb|atom| values,
-but we are not going to deal with that value type for the moment in this
-project.
+but they are also beyond the scope of this work. 
 
 \subsubsection{Collection types}
 
@@ -156,8 +153,8 @@ iex> tl([])
 \end{lstlisting}
 
 There is also a function for checking the \verb|list| type membership. Consider
-the following code to apply the \verb|is_list/1| function to several provided 
-lists and return the conjunction of its results:
+the following code that applies the \verb|is_list/1| function to several
+provided lists and return the conjunction of its results:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> Enum.all?(                 # Are all
@@ -194,7 +191,7 @@ iex> elem({1, 2, 3}, 3)
 
 In this case, the \verb|tuple| type membership checking function is
 \verb|is_tuple/1|. Usually, the components of a collection such as a \verb|list|
-or a \verb|tuple| are obtained by means of pattern matching, that is explained
+or a \verb|tuple| are obtained by means of pattern matching, which is explained
 in the following section.
 
 \subsubsection{Blocks, pattern matching and control flow}
@@ -213,10 +210,11 @@ iex> (
 false
 \end{lstlisting}
 
-The expressions inside a \verb|block| that are not the last one tend to perform
-side effects, such as binding values to variable names with the \verb|match|
-operator \verb|=|. Note that these bindings are not locally scoped inside
-\verb|block|s and, in contrast to Erlang, variable bindings can be overridden:
+However, and unlike the previous example, all the expressions inside a
+\verb|block| but the last one usually perform side effects, such as binding
+values to variable names with the \verb|match| operator \verb|=|. Note that
+these bindings are not locally scoped inside \verb|block|s and, in contrast to
+Erlang, variable bindings can be overridden:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> (z = 2, 4)
@@ -297,9 +295,9 @@ The rules that determine which clause is applied is are the same as in
 
 Although Elixir is dynamically typed, it has a system to annotate the intended
 types for functions and a tool to perform a static analysis on them, which is 
-called \gls{dialyzer} \citep{Dialyzer}. We will use these specifications
-together with function identifiers to outline the ideas behind our
-implementations along this document.
+called \gls{dialyzer} \citep{Dialyzer} and has been mentioned in Section
+\ref{sec:static}. We will use these specifications together with function
+identifiers to outline the ideas behind our implementations along this document.
 
 A function type specification can be defined as follows: 
 
@@ -384,15 +382,15 @@ iex> quote do
 \end{lstlisting}
 
 In this project, we have preferred to implement regular Elixir functions, some 
-of them that transform Elixir AST, and to use these to implement macros only at
-the top level \verb|module| of our packages in a simple and controlled manner
-due to the following reasons:
+of them that transform an Elixir AST into another one, and to use these to
+implement macros only at the top level \verb|module| of our packages in a simple
+and controlled manner due to the following reasons:
 
 \begin{itemize}
   \item In general, it is harder to reason about macros than about regular functions.
   \item These regular functions can be easily reused to provide different \gls{api}s built on top of them, either by defining macros or not.
-  \item In this way, the code generated by our macros is smaller because their expansion reuses regular function invocations at run-time.
-  \item If a macro expands to other macros, the user has to import also that macros.
+  \item When we expand to function invocations inside the generated AST, the resulting code is smaller because their expansion reuses regular function invocations at run-time.
+  \item If a macro expands to other macros, the user has to import also those macros.
 \end{itemize}
 
 \subsection{Interoperability}
@@ -400,9 +398,8 @@ due to the following reasons:
 Elixir offers several ways to interoperate with processes or libraries that are
 external to the Erlang Virtual Machine, apart from conventional \gls{io} based
 mechanisms. We are interested in these features due to the integration of an
-\acrshort{smt} solver in Elixir, which will surely be an external process.
-
-One of these ways is \gls{nif}s, which allows loading and calling libraries
+\acrshort{smt} solver in Elixir, which will surely be an external process. One
+of these ways is \gls{nif}s, which allows loading and calling libraries
 implemented in other programming languages such as C. When using this system, it
 is important to know that a crash in a \gls{nif} brings the Erlang Virtual 
 Machine down too \citep{ErlangDocs}.
@@ -442,9 +439,9 @@ allowed functions, predicates and constants to be from the signature $\{=, +,
 \leq, 0, 1\}$ with the usual axioms for equality, order and addition.
 
 The \gls{smt} problem is decidable for quantifier free fragments of an arbitrary
-theory $\mathcal{T}$ by an algorithm called DPLL($\mathcal{T}$) that combines a
-decision procedure for that specific theory with an algorithm to solve the
-\gls{sat} problem, such as CDCL. 
+theory $\mathcal{T}$ by an algorithm called DPLL($\mathcal{T}$) \citep{DPLL}
+that combines a decision procedure for that specific theory with an algorithm to
+solve the \gls{sat} problem, such as CDCL. 
 
 \subsection{SMT-LIB}
 \label{prelim:smtlib}
@@ -454,9 +451,9 @@ with \acrshort{smt} solvers. It defines a solver-agnostic standard language with
 a Lisp-like syntax to configure a solver, manage it, encode an \gls{smt} problem
 instance and query for solutions.
 
-The terms and formulas in this language correspond to a sorted(i.e. typed) 
-version of first-order logic \citep{smtLibStandard}, and this is a subset 
-of the syntax of allowed commands that we are going to use:
+The terms and formulas in this language correspond to a sorted (i.e. typed) 
+version of first-order logic \citep{smtLibStandard}, and the following is a
+subset of the syntax of allowed commands that we are going to use:
 
 \[
 \begin{array}{rcll}
@@ -472,10 +469,12 @@ of the syntax of allowed commands that we are going to use:
 
 As a brief description for these commands, \verb|assert| adds a well-sorted
 formula to the current assertion level, \verb|pop| and \verb|push| respectively
-add and remove an assertion level from the stack. \verb|check-sat| asks the
-solver whether the formulas from the stack are satisfiable or not.
-\verb|declare-sort|, \verb|declare-const| and \verb|declare-fun| allow declaring
-new sorts, functions or constants (i.e.  nullary functions).
+add and remove an assertion level from the stack. The latter allows us to
+restore the solver's state to the point in which the last \verb|push| was
+called.  \verb|check-sat| asks the solver whether the formulas from the stack
+are satisfiable or not.  \verb|declare-sort|, \verb|declare-const| and
+\verb|declare-fun| allow declaring new sorts, functions or constants (i.e.
+nullary functions).
 
 The command responses are defined by the following syntax:
 
@@ -508,7 +507,7 @@ arithmetic formula $x + 3 \leq y + 3 \Rightarrow x \leq y$:
 (check-sat)
 \end{verbatim}
 
-We are going to check it in the following section.
+We are going to check this formula in the following section.
 
 \subsection{Z3}
 
@@ -526,13 +525,12 @@ unsat
 Note that there may exist subtle non-compliances when a solver implements the
 SMT-LIB standard. For example, we have found that Z3 does not include the
 surrounding double-quotes when it prints back the provided string literal, which
-is the specified behavior in the standard.
-
-This may lead to confusion because the \verb|echo| command is the only one whose
-response is a string literal and, as this is not the case for Z3, there are 
-corner cases in which a command response can be confused with a printed string
-intended to delimit command responses, which is one of the proposed usages for
-\verb|echo| in \cite{smtLibStandard}:
+is the specified behavior in the standard. This may lead to confusion because
+the \verb|echo| command is the only one whose response is a string literal and,
+as this is not the case for Z3, there are corner cases in which a command
+response can be confused with a printed string intended to delimit command
+responses, which is one of the proposed usages for \verb|echo| in
+\cite{smtLibStandard}:
 
 \begin{verbatim}
 $ z3 -in <<<`(check-sat) (echo "sat")'
@@ -540,5 +538,5 @@ sat
 sat
 \end{verbatim}
 
-We are aware of this because we have used such technique to delimit the command 
-responses in order to parse them.
+We are aware of this issue because we have used such technique to delimit the
+command responses in order to parse them.
