@@ -127,13 +127,15 @@ Terms can be of a given type:
 (define-fun is_boolean ((x Term)) Bool (= (type x) bool))
 (define-fun is_tuple ((x Term)) Bool (= (type x) tuple))
 
-(define-fun is_nonempty_list ((x Term)) Bool 
+(define-fun is_nonempty_list ((x Term)) Bool (and
+  (distinct x nil) 
   (= (type x) nonempty_list)
-)
+))
 
-(define-fun is_list ((x Term)) Bool 
-  (or (= x nil) (= (type x) nonempty_list))
-)
+(define-fun is_list ((x Term)) Bool (or 
+  (= x nil) 
+  (= (type x) nonempty_list)
+))
 \end{verbatim}
 
 We also need a way to introduce and eliminate $\Term$s:
@@ -485,7 +487,8 @@ x~\texttt{===}~y\\
 x~\texttt{===}~y\\
 \{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow 
   (x = \mathit{nil} \wedge y = \mathit{nil})
-  \vee (\mathit{hd}(x) = \mathit{hd}(y) \land \mathit{tl}(x) = \mathit{tl}(y)) \}\\
+  \vee (x \neq \mathit{nil} \wedge y \neq \mathit{nil} \wedge\\
+  \quad\quad\mathit{hd}(x) = \mathit{hd}(y) \land \mathit{tl}(x) = \mathit{tl}(y)) \}\\
 \\
 \{ \istuple{x} \wedge \istuple{y} \wedge \mathit{tuple\mbox{-}size}(x) = \mathit{tuple\mbox{-}size}(y) \}\\
 x~\texttt{===}~y\\
