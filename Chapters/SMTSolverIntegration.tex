@@ -181,12 +181,17 @@ defprotocol Connection do
 end
 \end{lstlisting}
 
+Elixir protocols are mechanisms to achieve polymorphism and, in order to
+implement a connection with an \acrshort{smt} solver, it suffices to define an
+Elixir module with a data type that implements the \verb|Connection| protocol
+with these two functions.
+
 We provide a default implementation of this protocol to communicate with Z3
 through ports and allow the user to configure some of its parameters like the
 timeout, but other implementations involving different solvers and communication
 mechanisms should also be possible.
 
-All of this makes possible to implement and provide the public \gls{api} of the 
+All of this allows us to implement and provide the public \gls{api} of the 
 package under a top level module that defines the corresponding \gls{dsl} macros
 and can be used as in Section \ref{integ:dslexample}.
 

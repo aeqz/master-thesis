@@ -44,7 +44,7 @@ Let us define the syntax of L1 expressions and statements:
 
 We also assume that for every function symbol $f \in \Sigma^{1}$ of arity $n$
 there is an overloaded specification expressed in terms of L0 formulae. Here the
-word \emph{overloaded} means that there could be many pre/post-condition pairs
+word \emph{overloaded} means that there could be many pre/postcondition pairs
 for each function. For example, equality can be specified as follows:
 
 \[
@@ -84,9 +84,7 @@ built-in into the system in order to model the Elixir semantics.
 
 In this section, we show the translation process from L1 statements and
 expressions into L0 expressions. Also, we show how the most relevant function
-specifications to model the Elixir semantics are built-in into the system, but
-we allow the user to introduce their own function definitions and specifications
-in terms of L1 expressions.
+specifications to model the Elixir semantics are built-in into the system.
 
 \subsection{Built-in declarations}
 
@@ -281,7 +279,7 @@ A more complex case is that of function application:
 
 Firstly, we generate the L0 expression $\epsilon_i$ corresponding to each 
 argument $e_i$, and its corresponding uninterpreted term $t_i$. Then, we check 
-that at least one preconditions holds and, finally, for each pre/post-condition
+that at least one preconditions holds and, finally, for each pre/postcondition
 pair of the specification of the function being applied, we generate code that
 checks whether the precondition holds and, in case it does, we assert both the
 precondition and postcondition.
