@@ -5,23 +5,22 @@
 
 Our main goal is to provide a static verification mechanism to allow Elixir
 programmers to write formal specifications and prove the conformance of their 
-code in regard to these specifications. 
-
-In this section, we will discuss the current approaches and tools for that
-purpose in general, and then which are the current approaches to prove or
-disprove correctness in Elixir.
+code in regard to these specifications. In this section, we will discuss the
+current approaches and tools for that purpose in general, and then which are the
+current approaches to prove or disprove correctness properties in Elixir.
 
 \section{Program verification}
 
-A usual approach for program verification is to transform code and
-specifications into an intermediate representation, such as Boogie, and then a
-theorem prover tries to prove its verification conditions, where their validity
-implies the correctness under consideration \citep{Boogie2}.
+A usual approach for program verification is based on transforming code and
+specifications into an \gls{ir}, such as Boogie, and then a theorem prover tries
+to prove the verification conditions that are extracted from the \gls{ir}. The
+validity of these conditions implies the correctness of the program under
+consideration \citep{Boogie2}.
 
 In general, a theorem prover may not be able to reach a required proof, although
-it may exist, and human intervention can be necessary in the form of interacting
-with an interface, transforming the code to be verified or adding information to
-help the prover.
+such a proof may exist, and human intervention can be necessary in the form of
+interacting with an interface, transforming the code to be verified or adding
+information to help the prover.
 
 \subsection{Dafny}
 
@@ -48,73 +47,88 @@ Although the above example may seem simple, Dafny can also handle more advanced
 topics such as recursion and loops by means of induction and loop invariants
 respectively. Once verified, the code can be translated, erasing everything that
 is related only to its verification, into other programming languages such as
-C\# to be executed. 
+C\# so that it is compiled and executed. 
 
 Our project is greatly inspired by this system, although our aim is to embed
-program verification features into an existing programming language instead.
+program verification features into an existing programming language, namely
+Elixir, instead. Dafny code is also translated into a verification \gls{ir}, 
+named Boogie, for which verification conditions are intended to be discharged by
+the Z3 theorem prover. These different levels of abstraction correspond to
+separate tools, each one with its own parser, whereas in our project we pretend
+to implement all of them in Elixir.
 
 \subsection{Intermediate representations}
 
-\gls{ir}s tend to arise in compiler technologies, with goals like perform
+\gls{ir}s tend to arise in compiler technologies, with goals like performing
 analyses, optimizations or portability \citep{FormalizingLLVMIR}. A richer
 language can be translated into a simpler or more focused one, the \gls{ir},
 which can also be the translation target for other languages.
 
 A known technology which provides a platform-independent \gls{ir} intended to be
-executed in different platforms, and a toolchain to work with it, is LLVM
-\citep{LLVM}.
+executed in different platforms, and a toolchain to work with it, is \gls{llvm}
+\citep{LLVM}. This toolchain is more focused on optimization and static
+analysis, but there are also symbolic execution tools for \gls{llvm} programs,
+like in \cite{cadar2008klee}, which has been used in program verification for
+the Rust programming language in \citep{lindner2018no}.
 
 Programming languages such as Java and Erlang also have as a compilation target
-a bytecode \gls{ir} corresponding to their virtual machines, JVM and BEAM
-respectively. These are also compilation targets for other programming languages
-such as Kotlin and Scala for the JVM and Elixir for the BEAM virtual machine.
-Also, WebAssembly is an \gls{ir} intended to be executable at native speed in
-web browsers.
+a bytecode \gls{ir} corresponding to their virtual machines, \gls{jvm} 
+\citep{lindholm2013java} and BEAM \citep{stenman2015erlang} respectively. These
+are also compilation targets for other programming languages such as Kotlin and
+Scala for the \gls{jvm} and Elixir for the BEAM virtual machine.  Also,
+WebAssembly is an \gls{ir} intended to be executable at native speed in web
+browsers \citep{wasm}.
 
 \subsection{Intermediate representations for verification}
 
-For building verification tools, we are interested on \gls{ir}s that are focused
-in capturing the intended verification notions and are suitable to be
-transformed into an input for a theorem prover.  This last one will try to
-provide a proof for the verification.
+For building verification tools, we are interested in \gls{ir}s that are focused
+on capturing the intended verification notions and are suitable to be
+transformed into verification conditions that can be sent to a theorem prover.
+The latter will try to provide a proof for the correctness of the program under
+verification.
 
 Apart from Boogie2, which is the verification \gls{ir} used in Dafny and offers 
 features to model a wide range of programming paradigms, there are other ones as
-\gls{viper}, that is a suite of tools which provides an intermediate
-verification language with the same name and allows reasoning about the program
-state using \textit{permissions} or \textit{ownership}. It allows implementing 
-verification techniques for sequential and concurrent programs with mutable
-state \citep{viper}.
+\gls{viper}, a suite of tools which provides an intermediate verification
+language with the same name and allows reasoning about the program state using
+\textit{permissions} or \textit{ownership}. It allows implementing verification
+techniques for sequential and concurrent programs with mutable state
+\citep{viper}. Viper has also been used for program verification in Rust 
+\citep{astrauskas2022prusti}.
 
-Also, Why3 is a platform for deductive program verification that provides a
-language for specification and programming, WhyML, that can be used as an
-\gls{ir} for the verification of C, Java, Ada, or to obtain an automated
-correct-by-construction OCaml program \citep{Why3Manual}.
+Also, Why3 \citep{Why3} is a platform for deductive program verification that
+provides a language for specification and programming, WhyML, that can be used
+as an \gls{ir} for the verification of C, Java, Ada, or to obtain automated
+correct-by-construction OCaml programs \citep{Why3Manual}.
 
-Other approaches try to use logic programs as an intermediate representation 
-throughout its regular compilation process, as in \cite{horn}, and other ones
-put an effort into being a suitable target for modelling faithfully the
-semantics of different programming languages, as in \cite{caviart}.
+Other approaches try to use logic programs as an \gls{ir} throughout its regular
+compilation process, as in \cite{horn}, and other ones put an effort into being
+a suitable target for modelling faithfully the semantics of different
+programming languages, as in \cite{caviart}. The latter has been used in a
+project that is related with the one presented in this document, because they
+use S-expressions as a textual representation of their \gls{ir} and process them
+with Common Lisp, also using Lisp macros, in order to provide different
+semantics, one of them for generating verification conditions \citep{cavilisp}.
 
 \subsection{SMT solvers}
 
 At the bottom of the verification process, a theorem prover will try to obtain a
 proof for some verification conditions. \acrshort{smt} solvers in particular are
 gaining popularity for this task, and some current options are Z3 from
-Microsoft, Z3, CVC4, MathSAT and Yices. 
+Microsoft, CVC4, MathSAT and Yices. 
 
 There is also an international initiative, called SMT-LIB, aimed at facilitating
 research and development in \gls{smt} \citep{smtLibStandard}. We will discuss 
-\gls{smt}, SMT-LIB and Z3 in the Chapter \ref{cap:preliminaries} as these are
+\gls{smt}, SMT-LIB and Z3 in the Chapter \ref{cap:preliminaries}, as these are
 tools that are going to be used in our project.
 
-\section{Correctness in Elixir}
+\section{Program verification in Elixir}
 
 The current approaches for proving or disproving the correctness of Elixir 
 programs are in general inherited from Erlang, and they succeed more in 
-disproving than in proving correctness.
+detecting faults rather than in proving correctness.
 
-\subsection{Dynamic}
+\subsection{Dynamic approaches}
 
 Erlang provides several libraries for property-based testing such as \gls{triq},
 \gls{proper} and Erlang QuickCheck. Many of them are offered for Elixir through
@@ -127,15 +141,23 @@ specification mechanism of Elixir in order to automatically provide data
 generators.
 
 In this case, their goal is to disprove the correctness of the program by
-finding counterexamples for specified properties.
+finding counterexamples for specified properties. Tools of this kind show the
+presence of errors rather than the absence of them.
 
-\subsection{Static}
+\subsection{Static approaches}
 \label{sec:static}
 
-Elixir allows to annotate the intended types for function parameters and return
-values, and a tool called \gls{dialyzer} \citep{Dialyzer} can perform static
-analysis on them. A problem detected by this tool can disprove correctness, but
-it does not prove correctness, which is our aim in this project.
+Elixir allows annotating the intended types for function parameters and return
+values, so that a tool named \gls{dialyzer} \citep{Dialyzer} can perform static
+analysis on them. A type discrepancy detected by the tool implies that the
+program is bound to fail when executed, but the absence of such discrepancies
+does not guarantee type safety, and it does neither prove that the program is
+correct, which is our aim in this project.
 
-There have been other attempts in offering tools that provide correctness proofs
-for Erlang programs, as in \cite{erlangveri}.
+There have been other attempts in providing tools that offer correctness proofs
+for Erlang programs, as in \cite{erlangveri}, where they allow the programmer to
+specify correctness requirements with inductive and compositional reasoning, and
+also with reasoning about side-effect-free code. They also offer a graphical
+tool to interact with the theorem prover, but conclude that more effort is
+required in order to reduce the required human intervention and to make its
+verification method practically useful.
