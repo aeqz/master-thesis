@@ -5,15 +5,14 @@ This appendix shows a longer usage example of our developed \gls{dsl} to
 communicate with an \acrshort{smt} solver from Elixir. It corresponds to the
 \gls{csp} of checking whether a given graph has a Hamiltonian path or not.
 
-A Hamiltonian path is a path that visits each node exactly once, and it can be 
-expressed as a \gls{sat} problem by specifying it as a \gls{csp} and encoding 
-its constraints as propositional formulas.
-
-We are going to write it as an Elixir script (i.e. code that is not provided 
-under a \verb|module| and can be directly evaluated by \verb|iex|). It will
-involve some Elixir usage that has not been presented in this document (e.g. 
-the \verb|pin| operator, the \verb|pipe| operator, comprehensions, etc.), but we
-hope that the comments will clarify the idea:
+A Hamiltonian path is a path that visits each node exactly once, and its
+existence can be expressed as a \gls{sat} problem by specifying it as a
+\gls{csp} and encoding its constraints as propositional formulas. We are going
+to write it as an Elixir script (i.e. code that is not provided under a
+\verb|module| and can be directly evaluated by \verb|iex|). It will involve some
+Elixir usage that has not been presented in this document (e.g.  the \verb|pin|
+operator, the \verb|pipe| operator, comprehensions, etc.), but we hope that the
+comments will clarify the idea:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 import SmtLib
@@ -82,7 +81,6 @@ with_local_conn do
 
   check_sat
 end
-
 # Print the result of the block, that is,
 # the result of check_sat
 |> IO.inspect()
