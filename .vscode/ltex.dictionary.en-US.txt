@@ -62,3 +62,5 @@ SIGPLAN
 OSDI
 INDIN
 Prusti
+booleans
+arities

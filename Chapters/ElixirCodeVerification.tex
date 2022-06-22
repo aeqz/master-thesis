@@ -284,8 +284,9 @@ and a postcondition, $P_1, \dots, P_n$ are the parameter patterns and $B \in
 Given a function named $f$ with arity $n$, we denote its overloaded definitions
 as $\Defs{f/n}$ = $(\mathit{def}_1,\dots,\mathit{def}_k)$, where its definition
 order matters. For each function, we are going to translate its definitions into
-a $\caseE$ L2 expression that models them:
+a $\caseE$ L2 expression that models them, as in Figure \ref{fig:deftr}.
 
+\begin{figure}
 \[
 \begin{array}{l}
 \trDef{f/n} = \left[ \begin{array}{l}
@@ -317,6 +318,9 @@ a $\caseE$ L2 expression that models them:
 \phantom{\textbf{where }} \mathit{def}_i = \left(\{ p_i \}  \quad (P_{i,1}, \dots, P_{i,n})~B_i \quad \{ q_i \} \right) 
 \end{array}
 \]
+\caption{Translation of a user-defined function into an L2 expression to verify}
+\label{fig:deftr}
+\end{figure}
 
 We have used the fact that the rules in Elixir to select which function
 definition takes effect are similar to those of the Elixir \verb|case|

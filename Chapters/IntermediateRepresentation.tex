@@ -3,11 +3,15 @@
 
 \chapterquote{This process of using tools you built yesterday to help build bigger tools today is called abstraction, and it is the most powerful force I know of in the universe}{Sandy Maguire}
 
-In this chapter, we develop an \gls{ir} for verification that is intended to be 
-particularly suitable for languages like Elixir. We start by providing its
-formal syntax, its translation into L0 expressions and the built-in prelude that
-we have defined for modelling the Elixir semantics.  Then, we show some examples
-with our current implementation and give an overview of its details.
+In this chapter, we develop a verification \gls{ir} that is intended to be 
+particularly suitable for languages like Elixir. It consists of a representation
+whose expressions correspond to Elixir expressions that are dynamically typed
+and, for that, all of them will have the same sort, namely $\Term$.
+
+We start by providing its formal syntax, the built-in prelude that we have
+defined for modelling the Elixir semantics, and its translation into L0
+expressions.  Then, we show some examples with our current implementation and
+give an overview of its details.
 
 \section{Syntax}
 
@@ -45,34 +49,7 @@ Let us define the syntax of L1 expressions and statements:
 We also assume that for every function symbol $f \in \Sigma^{1}$ of arity $n$
 there is an overloaded specification expressed in terms of L0 formulae. Here the
 word \emph{overloaded} means that there could be many pre/postcondition pairs
-for each function. For example, equality can be specified as follows:
-
-\[
-\begin{array}{l}
-\{ \isinteger{x} \wedge \isinteger{y} \}\\
-x~\texttt{===}~y\\
-\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow \integervalue{x} = \integervalue{y} \}\\
-\\
-\{ \isboolean{x} \wedge \isboolean{y} \}\\
-x~\texttt{===}~y\\
-\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow \booleanvalue{x} = \booleanvalue{y} \}\\
-\\
-\vdots
-\\
-\\
-\{\true\}\\
-x~\texttt{===}~y\\
-\{ \isboolean{\widehat{===}(x, y)} \wedge \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow (x = y) \}\\
-\\
-\end{array}
-\]
-
-Here $\widehat{===}$ is the uninterpreted symbol in $\Sigma^{0}$ corresponding 
-to Elixir's strict equality operator $\texttt{===} \in \Sigma^{1}$. We write the
-former in prefix form in order to highlight the fact that it is an uninterpreted
-function symbol in the logic. On the contrary, the $=$, $\Leftrightarrow$,
-$\wedge$ in the specification above are actual connectives and operators of the
-underlying logic.
+for each function.
 
 We denote by $\sigma_1, \ldots, \sigma_m$ the specifications of a function $f
 \in \Sigma^{1}$. Each one is a pair $(\varphi(x_1, \ldots, x_n), \psi(x_1,
@@ -82,43 +59,60 @@ built-in into the system in order to model the Elixir semantics.
 
 \section{Semantics}
 
-In this section, we show the translation process from L1 statements and
-expressions into L0 expressions. Also, we show how the most relevant function
-specifications to model the Elixir semantics are built-in into the system.
+In this section, we show how the most relevant function specifications to model
+the Elixir semantics are built-in into the system, and also the translation
+process from L1 statements and expressions into L0 expressions. 
 
 \subsection{Built-in declarations}
 
-During the translation of L1 statements and expressions into L0 expressions, we 
-require some defined sorts, constants and functions in SMT-LIB. Every representation
-of an L1 expression has sort $\Term$ in the underlying logic:
+The translation that we will define for L1 statements and expressions into L0
+expressions generates terms that require some defined sorts, constants and
+functions in SMT-LIB. We will represent them with the standard syntax of SMT-LIB
+commands instead of with our \gls{dsl} in order to not couple the theory with
+our implementation. Every representation of an L1 expression has sort $\Term$ in
+the underlying logic:
 
 \begin{verbatim}
-; The sort Term
 (declare-sort Term 0)
 \end{verbatim}
 
-Terms can be of a given type:
+$\Term$s can be of a given type, for which we also require a sort:
 
 \begin{verbatim}
-; The sort Type
 (declare-sort Type 0)
+\end{verbatim}
 
-; Modelled types
+In this work we have only considered integers, booleans, tuples and lists. We
+define a constant for each one, all different between them:
+
+\begin{verbatim}
 (declare-const int Type)
 (declare-const bool Type)
 (declare-const tuple Type)
 (declare-const nonempty_list Type)
 
-; All of them are different
 (assert (distinct int bool))
 (assert (distinct int tuple))
 (assert (distinct int nonempty_list))
 (assert (distinct bool tuple))
 (assert (distinct bool nonempty_list))
 (assert (distinct tuple nonempty_list))
+\end{verbatim}
 
-; Type membership checking predicates
+We dedicate a $\Term$ constant for the empty list:
+
+\begin{verbatim}
+(declare-const nil Term)
+\end{verbatim}
+
+In the built-in function specifications, we will require indicating if a
+variable corresponds to a $\Term$ of a given type. For that, we need a function
+to represent the type of a $\Term$, and we have also defined a set of helper
+predicates:
+
+\begin{verbatim}
 (declare-fun type (Term) Type)
+
 (define-fun is_integer ((x Term)) Bool (= (type x) int))
 (define-fun is_boolean ((x Term)) Bool (= (type x) bool))
 (define-fun is_tuple ((x Term)) Bool (= (type x) tuple))
@@ -134,37 +128,204 @@ Terms can be of a given type:
 ))
 \end{verbatim}
 
-We also need a way to introduce and eliminate $\Term$s:
+We also need a way to introduce $\Term$s. These correspond to simple literal
+values:
 
 \begin{verbatim}
-; Introduce literal values as corresponding Term
 (declare-fun integer_lit (Int) Term)
 (declare-fun boolean_lit (Bool) Term)
+\end{verbatim}
 
-; In the case of boolean connectives, their value constructors
+In the case of boolean connectives and nonempty lists, their value constructors:
+
+\begin{verbatim}
 (declare-fun term_and (Term Term) Term)
 (declare-fun term_or (Term Term) Term)
-
-; In the case of lists, their value constructors
-(declare-fun nil () Term)
 (declare-fun cons (Term Term) Term)
+\end{verbatim}
 
-; In the case of tuples, they are declared dynamically as
-; (declare-fun tuple_n (Term ... Term) Term)
+In the case of tuples, they are declared as follows for the required arities:
 
-; The value of a Term of a given type in the underlying logic
+\begin{verbatim}
+(declare-fun tuple_n (Term ... Term) Term)
+\end{verbatim}
+
+We also need a way to eliminate $\Term$s. These correspond to simple literal
+values:
+
+\begin{verbatim}
 (declare-fun integer_val (Term) Int)
 (declare-fun boolean_val (Term) Bool)
+\end{verbatim}
 
-; In the case of lists and tuples, its decomposition
+In the case of boolean connectives, nonempty lists and tuples, their
+decomposition by means of the following functions:
+
+\begin{verbatim}
 (declare-fun hd (Term) Term)
 (declare-fun tl (Term) Term)
 (declare-fun tuple_size (Term) Int)
 (declare-fun elem (Term Int) Term)
 \end{verbatim}
 
-These SMT-LIB commands will be executed at the beginning of our verification
-process to initialize the solver.
+The \acrshort{smt} solver must be initialized with the above commands in order
+to verify L0 expressions generated by our \gls{ir} through the translation that
+is presented along the following sections.
+
+\subsection{Built-in specifications}
+
+In order to allow L1 expressions to model the semantics of built-in Elixir
+functions and operators, the corresponding uninterpreted functions must be
+declared in SMT-LIB with sort $\Term \times \stackrel{n}{\dots} \times \Term
+\rightarrow \Term$, and our system must provide their corresponding built-in
+specifications. We have explored some of them which are explained in this
+section.
+
+For integer arithmetic, the specification of $\texttt{+}$ can be defined as
+
+\[
+\begin{array}{l}
+\{ \isinteger{x} \wedge \isinteger{y} \}\\
+x~\texttt{+}~y\\
+\{ \isinteger{\widehat{+}(x, y)} \wedge 
+  \integervalue{\widehat{+}(x, y)} = \integervalue{x} + \integervalue{y} \}
+\end{array}
+\]
+
+and it could be extended if we modelled other numeric types such as
+\verb|float|. The binary operators $\texttt{*}$ and $\texttt{-}$ and are
+specified similarly, and the unary version of $\texttt{-}$ can be specified as
+follows:
+
+\[
+\begin{array}{l}
+\{ \isinteger{x} \}\\
+\texttt{-}~x\\
+\{ \isinteger{\widehat{-}(x)} \wedge 
+  \integervalue{\widehat{-}(x)} = -\integervalue{x} \}
+\end{array}
+\]
+
+Similarly, the Elixir boolean negation can be specified as:
+
+\[
+\begin{array}{l}
+\{ \isboolean{x} \}\\
+\mathit{not}(x)\\
+\{ \isboolean{\widehat{\mathit{not}}(x)} \wedge 
+  \booleanvalue{\widehat{\mathit{not}}(x)} \Leftrightarrow \neg\booleanvalue{x} \}
+\end{array}
+\]
+
+We have only provided the comparison for integer terms as
+
+\[
+\begin{array}{l}
+\{ \isinteger{x} \wedge \isinteger{y} \}\\
+x~\texttt{<}~y\\
+\{ \isboolean{\widehat{<}(x, y)} \wedge 
+  \booleanvalue{\widehat{<}(x, y)} \Leftrightarrow \integervalue{x} < \integervalue{y} \}
+\end{array}
+\]
+
+and it is in the same way for $\texttt{>}$, $\texttt{<=}$ and $\texttt{>=}$. An
+improvement would be to extend this for any term, including lists and tuples.
+
+Term strict equality can be specified as in Figure \ref{fig:stricteq}, and it is
+also similar for $\texttt{!==}$. It specifies pairs of pre/postconditions for
+each type, and also one that always holds and allows to relate the operator 
+semantics with the equality in the underlying logic.
+
+\begin{figure}
+\[
+\begin{array}{l}
+\{ \isinteger{x} \wedge \isinteger{y} \}\\
+x~\texttt{===}~y\\
+\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow \integervalue{x} = \integervalue{y} \}\\
+\\
+\{ \isboolean{x} \wedge \isboolean{y} \}\\
+x~\texttt{===}~y\\
+\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow \booleanvalue{x} = \booleanvalue{y} \}\\
+\\
+\{ \islist{x} \wedge \islist{y} \}\\
+x~\texttt{===}~y\\
+\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow 
+  (x = \mathit{nil} \wedge y = \mathit{nil})
+  \vee (x \neq \mathit{nil} \wedge y \neq \mathit{nil} \wedge\\
+  \quad\quad\mathit{hd}(x) = \mathit{hd}(y) \land \mathit{tl}(x) = \mathit{tl}(y)) \}\\
+\\
+\{ \istuple{x} \wedge \istuple{y} \wedge \mathit{tuple\mbox{-}size}(x) = \mathit{tuple\mbox{-}size}(y) \}\\
+x~\texttt{===}~y\\
+\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow 
+  (\forall i. i >= 0 \wedge i < \mathit{tuple\mbox{-}size}(x) \Rightarrow \mathit{elem}(x, i) = \mathit{elem}(y, i)) \}\\
+\\
+\{ \istuple{x} \wedge \istuple{y} \wedge \mathit{tuple\mbox{-}size}(x) \neq \mathit{tuple\mbox{-}size}(y) \}\\
+x~\texttt{===}~y\\
+\{ \neg\booleanvalue{\widehat{===}(x, y)} \}\\
+\\
+\{\true\}\\
+x~\texttt{===}~y\\
+\{ \isboolean{\widehat{===}(x, y)} \wedge \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow (x = y) \}\\
+\\
+\end{array}
+\]
+\caption{Built-in specification for the Elixir strict equality operator}
+\label{fig:stricteq}
+\end{figure}
+
+The $\mathit{tuple\mbox{-}size}$ and $\mathit{elem}$ functions can be specified directly 
+in terms of the built-in declarations used during the translation:
+
+\[
+\begin{array}{l}
+\{ \istuple{x} \}\\
+\mathit{tuple\mbox{-}size}(x)\\
+\{ \isinteger{\widehat{\mathit{tuple\mbox{-}size}}(x)} \wedge 
+  \integervalue{\widehat{\mathit{tuple\mbox{-}size}}(x)} = \mathit{tuple\mbox{-}size}(x) \}
+\end{array}
+\]
+
+\[
+\begin{array}{l}
+\{ \istuple{x} \wedge \isinteger{i} \wedge \integervalue{i} >= 0 \wedge \integervalue{i} < \mathit{tuple\mbox{-}size}(x) \}\\
+\mathit{elem}(x, i)\\
+\{ \widehat{\mathit{elem}}(x, i) = \mathit{elem}(x, \integervalue{i}) \}
+\end{array}
+\]
+
+The same can be applied to the $\mathit{hd}$ function
+
+\[
+\begin{array}{l}
+\{ \isnelist{x} \}\\
+\mathit{hd}(x)\\
+\{ \widehat{\mathit{hd}}(x) = \mathit{hd}(x) \}
+\end{array}
+\]
+
+and it is similar for $\mathit{tl}$. Note that, in these last examples, the L1
+function that is being specified is not the same as the one mentioned in the
+postcondition, which is a built-in L0 function, although we have used the same
+name.
+
+The type-checking functions can also be specified directly with the built-in
+declared L0 functions:
+
+\[
+\begin{array}{l}
+\{ \true \}\\
+\isinteger{x}\\
+\{ \isboolean{\widehat{\isinteger{x}}} \wedge 
+  \booleanvalue{\widehat{\isinteger{x}}} \Leftrightarrow \isinteger{x} \}
+\end{array}
+\]
+
+and it is similar for the remaining types.
+
+If some Elixir operator cannot be modelled with function specifications like the
+ones shown in this section, they can be defined as L1 expressions with its own 
+translation into L0, as we did to model the short-circuit semantics of the 
+\verb|and| and \verb|or| operators.
 
 \subsection{Translation into L0}
 \label{sec:translationL0}
@@ -285,8 +446,10 @@ checks whether the precondition holds and, in case it does, we assert both the
 precondition and postcondition.
 
 We distinguish the cases of logical connectives from function application
-because of their specific short-circuit semantics in Elixir:
+because of their specific short-circuit semantics in Elixir. Their corresponding 
+translations are in Figures \ref{fig:andtr} and \ref{fig:ortr}.
 
+\begin{figure}
 \[
 \begin{array}{l}
 \trExp{\gamma}{\andE{e_1}{e_2}} \equiv (\epsilon, t)\\
@@ -317,6 +480,9 @@ because of their specific short-circuit semantics in Elixir:
 \right] \\
 \end{array}
 \]
+\caption{Translation of the $\mathbf{and}$ L1 expression into L0}
+\label{fig:andtr}
+\end{figure}
 
 In the translation for an $\mathbf{and}$ expression, we firstly check if $t_1$,
 the term in the underlying logic that results of translating $e_1$, is boolean.
@@ -328,8 +494,7 @@ not exactly known at this point, we check if $t_2$ is a boolean, again with the
 knowledge that $t_1$ is $\true$, and translate the whole expression into the
 underlying logical conjunction.
 
-The translation corresponding to $\mathbf{or}$ is analogous:
-
+\begin{figure}
 \[
 \begin{array}{l}
 \trExp{\gamma}{\orE{e_1}{e_2}} \equiv (\epsilon, t)\\
@@ -360,6 +525,9 @@ The translation corresponding to $\mathbf{or}$ is analogous:
 \right] \\
 \end{array}
 \]
+\caption{Translation of the $\mathbf{or}$ L1 expression into L0}
+\label{fig:ortr}
+\end{figure}
 
 Now we move on to L1 statements. The following ones are translated in a 
 quite straightforward way:
@@ -409,156 +577,6 @@ its boolean value is $\true$:
 \end{array}\right]
 \qquad \textbf{where}~(\epsilon, t) = \trExps{e}
 \]
-
-\subsection{Built-in specifications}
-
-In order to allow L1 expressions to model the semantics of built-in Elixir
-functions and operators, the corresponding uninterpreted functions must be
-declared in SMT-LIB with sort $\Term \times \stackrel{n}{\dots} \times \Term
-\rightarrow \Term$, and our system must provide their corresponding built-in
-specifications. We have explored some of them which are explained in this
-section.
-
-For integer arithmetic, the specification of $\texttt{+}$ can be defined as
-
-\[
-\begin{array}{l}
-\{ \isinteger{x} \wedge \isinteger{y} \}\\
-x~\texttt{+}~y\\
-\{ \isinteger{\widehat{+}(x, y)} \wedge 
-  \integervalue{\widehat{+}(x, y)} = \integervalue{x} + \integervalue{y} \}
-\end{array}
-\]
-
-and it could be extended if we modelled other numeric types such as
-\verb|float|. The binary operators $\texttt{*}$ and $\texttt{-}$ and are
-specified similarly, and the unary version of $\texttt{-}$ can be specified as
-follows:
-
-\[
-\begin{array}{l}
-\{ \isinteger{x} \}\\
-\texttt{-}~x\\
-\{ \isinteger{\widehat{-}(x)} \wedge 
-  \integervalue{\widehat{-}(x)} = -\integervalue{x} \}
-\end{array}
-\]
-
-Similarly, the Elixir boolean negation can be specified as:
-
-\[
-\begin{array}{l}
-\{ \isboolean{x} \}\\
-\mathit{not}(x)\\
-\{ \isboolean{\widehat{\mathit{not}}(x)} \wedge 
-  \booleanvalue{\widehat{\mathit{not}}(x)} \Leftrightarrow \neg\booleanvalue{x} \}
-\end{array}
-\]
-
-We have only provided the comparison for integer terms as
-
-\[
-\begin{array}{l}
-\{ \isinteger{x} \wedge \isinteger{y} \}\\
-x~\texttt{<}~y\\
-\{ \isboolean{\widehat{<}(x, y)} \wedge 
-  \booleanvalue{\widehat{<}(x, y)} \Leftrightarrow \integervalue{x} < \integervalue{y} \}
-\end{array}
-\]
-
-and it is in the same way for $\texttt{>}$, $\texttt{<=}$ and $\texttt{>=}$. An
-improvement would be to extend this for any term, including lists and tuples.
-
-Term equality can be specified as follows:
-
-\[
-\begin{array}{l}
-\{ \isinteger{x} \wedge \isinteger{y} \}\\
-x~\texttt{===}~y\\
-\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow \integervalue{x} = \integervalue{y} \}\\
-\\
-\{ \isboolean{x} \wedge \isboolean{y} \}\\
-x~\texttt{===}~y\\
-\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow \booleanvalue{x} = \booleanvalue{y} \}\\
-\\
-\{ \islist{x} \wedge \islist{y} \}\\
-x~\texttt{===}~y\\
-\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow 
-  (x = \mathit{nil} \wedge y = \mathit{nil})
-  \vee (x \neq \mathit{nil} \wedge y \neq \mathit{nil} \wedge\\
-  \quad\quad\mathit{hd}(x) = \mathit{hd}(y) \land \mathit{tl}(x) = \mathit{tl}(y)) \}\\
-\\
-\{ \istuple{x} \wedge \istuple{y} \wedge \mathit{tuple\mbox{-}size}(x) = \mathit{tuple\mbox{-}size}(y) \}\\
-x~\texttt{===}~y\\
-\{ \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow 
-  (\forall i. i >= 0 \wedge i < \mathit{tuple\mbox{-}size}(x) \Rightarrow \mathit{elem}(x, i) = \mathit{elem}(y, i)) \}\\
-\\
-\{ \istuple{x} \wedge \istuple{y} \wedge \mathit{tuple\mbox{-}size}(x) \neq \mathit{tuple\mbox{-}size}(y) \}\\
-x~\texttt{===}~y\\
-\{ \neg\booleanvalue{\widehat{===}(x, y)} \}\\
-\\
-\{\true\}\\
-x~\texttt{===}~y\\
-\{ \isboolean{\widehat{===}(x, y)} \wedge \booleanvalue{\widehat{===}(x, y)} \Leftrightarrow (x = y) \}\\
-\\
-\end{array}
-\]
-
-and it is also similar for $\texttt{!==}$.
-
-The $\mathit{tuple\mbox{-}size}$ and $\mathit{elem}$ functions can be specified directly 
-in terms of the built-in declarations used during the translation:
-
-\[
-\begin{array}{l}
-\{ \istuple{x} \}\\
-\mathit{tuple\mbox{-}size}(x)\\
-\{ \isinteger{\widehat{\mathit{tuple\mbox{-}size}}(x)} \wedge 
-  \integervalue{\widehat{\mathit{tuple\mbox{-}size}}(x)} = \mathit{tuple\mbox{-}size}(x) \}
-\end{array}
-\]
-
-\[
-\begin{array}{l}
-\{ \istuple{x} \wedge \isinteger{i} \wedge \integervalue{i} >= 0 \wedge \integervalue{i} < \mathit{tuple\mbox{-}size}(x) \}\\
-\mathit{elem}(x, i)\\
-\{ \widehat{\mathit{elem}}(x, i) = \mathit{elem}(x, \integervalue{i}) \}
-\end{array}
-\]
-
-The same can be applied to the $\mathit{hd}$ function
-
-\[
-\begin{array}{l}
-\{ \isnelist{x} \}\\
-\mathit{hd}(x)\\
-\{ \widehat{\mathit{hd}}(x) = \mathit{hd}(x) \}
-\end{array}
-\]
-
-and it is similar for $\mathit{tl}$. Note that, in these last examples, the L1
-function that is being specified is not the same as the one mentioned in the
-postcondition, which is a built-in L0 function, although we have used the same
-name.
-
-The type-checking functions can also be specified directly with the built-in
-declared L0 functions:
-
-\[
-\begin{array}{l}
-\{ \true \}\\
-\isinteger{x}\\
-\{ \isboolean{\widehat{\isinteger{x}}} \wedge 
-  \booleanvalue{\widehat{\isinteger{x}}} \Leftrightarrow \isinteger{x} \}
-\end{array}
-\]
-
-and it is similar for the remaining types.
-
-If some Elixir operator cannot be modelled with function specifications like the
-ones shown in this section, they can be defined as L1 expressions with its own 
-translation into L0, as we did to model the short-circuit semantics of the 
-\verb|and| and \verb|or| operators.
 
 \subsection{Term size modelling}
 \label{sec:termsize}
