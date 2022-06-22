@@ -63,3 +63,5 @@
 {"rule":"EN_A_VS_AN","sentence":"^\\QOther approaches try to use logic programs as an \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q throughout its regular compilation process, as in \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, and other ones put an effort into being a suitable target for modelling faithfully the semantics of different programming languages, as in \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qsmt solvers in particular are gaining popularity for this task, and some current options are Z3 from Microsoft, CVC4, MathSAT and Yices.\\E$"}
 {"rule":"KIND_OF_A","sentence":"^\\QFor that, we need a function to represent the type of a \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, and we have also defined a set of helper predicates:\\E$"}
+{"rule":"FILE_EXTENSIONS_CASE","sentence":"^\\Qpdf\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qsmt solvers in particular are gaining popularity for this task, and some current options are Z3 from Microsoft \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, CVC4 \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q, MathSAT \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q and Yices \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q.\\E$"}

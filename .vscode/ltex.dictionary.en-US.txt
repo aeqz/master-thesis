@@ -64,3 +64,5 @@ INDIN
 Prusti
 booleans
 arities
+mathsat
+yices

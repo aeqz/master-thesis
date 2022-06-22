@@ -114,8 +114,9 @@ semantics, one of them for generating verification conditions \citep{cavilisp}.
 
 At the bottom of the verification process, a theorem prover will try to obtain a
 proof for some verification conditions. \acrshort{smt} solvers in particular are
-gaining popularity for this task, and some current options are Z3 from
-Microsoft, CVC4, MathSAT and Yices. 
+gaining popularity for this task, and some current options are Z3 from Microsoft
+\citep{moura2008z3}, CVC4 \citep{barrett2011cvc4}, MathSAT
+\citep{bozzano2005mathsat} and Yices \citep{dutertre2006yices}. 
 
 There is also an international initiative, called SMT-LIB, aimed at facilitating
 research and development in \gls{smt} \citep{smtLibStandard}. We will discuss 
@@ -130,9 +131,9 @@ detecting faults rather than in proving correctness.
 
 \subsection{Dynamic approaches}
 
-Erlang provides several libraries for property-based testing such as \gls{triq},
-\gls{proper} and Erlang QuickCheck. Many of them are offered for Elixir through
-wrapper packages as \verb|ExCheck| for \gls{triq} and \verb|PropCheck| for
+Erlang provides several libraries for property-based testing such as
+\gls{proper} \citep{proper} and Erlang QuickCheck \citep{quickcheck}. Many of
+them are offered for Elixir through wrapper packages as \verb|PropCheck| for
 \gls{proper}.
 
 There are also packages implemented completely in Elixir, as \verb|StreamData|
