@@ -1,6 +1,8 @@
 \chapter{SMT Solver Integration in Elixir}
 \label{cap:smtSolverIntegration}
 
+\chapterquote{I could never sound like you, and only if you chose to emulate me would you sound like me}{Tosin Abasi}
+
 In order to implement our system, we will require to be able to interact with an
 \acrshort{smt} solver from Elixir. We have decided to use the Z3 theorem prover,
 which supports SMT-LIB, and to communicate with it precisely by using this
@@ -190,8 +192,8 @@ parameters like the timeout, but other implementations involving different
 solvers and communication mechanisms should also be possible.
 
 All of this allows us to implement and provide the public \gls{api} of the 
-package under a top level module that defines the corresponding \gls{dsl} macros
-and can be used as in Section \ref{integ:dslexample}.
+package under a top level \verb|module| that defines the corresponding \gls{dsl}
+macros and can be used as in Section \ref{integ:dslexample}.
 
 \section{The L0 language}
 

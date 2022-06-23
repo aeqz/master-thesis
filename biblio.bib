@@ -54,21 +54,6 @@
   publisher={Oreilly \& Associates Incorporated}
 }
 
-@inproceedings{Why3,
-  title={Why3: Shepherd your herd of provers},
-  author={Bobot, Fran{\c{c}}ois and Filli{\^a}tre, Jean-Christophe and March{\'e}, Claude and Paskevich, Andrei},
-  booktitle={Boogie 2011: First International Workshop on Intermediate Verification Languages},
-  year={2011}
-}
-
-@inproceedings{wasm, 
-  author={Haas, Andreas and Rossberg, Andreas and Schuff, Derek L. and Titzer, Ben L. and Holman, Michael and Gohman, Dan and Wagner, Luke and Zakai, Alon and Bastien, JF}, 
-  title={Bringing the Web up to Speed with WebAssembly}, 
-  year={2017}, 
-  publisher={Association for Computing Machinery}, 
-  booktitle={Proceedings of the 38th ACM SIGPLAN Conference on Programming Language Design and Implementation}
-}
-
 @misc{ElixirDocs,
   title={{Elixir} documentation in {Hex}},
   howpublished={\url{https://hexdocs.pm/elixir}},
@@ -87,36 +72,69 @@
   year=2022
 }
 
+@inproceedings{Why3,
+  title={Why3: {S}hepherd your herd of provers},
+  author={Bobot, Fran{\c{c}}ois and Filli{\^a}tre, Jean-Christophe and March{\'e}, Claude and Paskevich, Andrei},
+  booktitle={Boogie 2011: First International Workshop on Intermediate Verification Languages},
+  pages={53--64},
+  year={2011}
+}
+
+@inproceedings{wasm,
+  title={Bringing the web up to speed with {W}eb{A}ssembly},
+  author={Haas, Andreas and Rossberg, Andreas and Schuff, Derek L and Titzer, Ben L and Holman, Michael and Gohman, Dan and Wagner, Luke and Zakai, Alon and Bastien, JF},
+  booktitle={Proceedings of the 38th ACM SIGPLAN Conference on Programming Language Design and Implementation},
+  pages={185--200},
+  year={2017}
+}
+
 @article{erlangveri,
   title={A verification tool for {E}rlang},
   author={Fredlund, Lars--{\AA}ke and Gurov, Dilian and Noll, Thomas and Dam, Mads and Arts, Thomas and Chugunov, Gennady},
+  journal={International Journal on Software Tools for Technology Transfer},
+  volume={4},
+  number={4},
+  pages={405--420},
   year={2003},
   publisher={Springer}
 }
 
-@article{viper,
-  title={Viper: A verification infrastructure for permission-based reasoning},
+@inproceedings{viper,
+  title={Viper: {A} verification infrastructure for permission-based reasoning},
   author={M{\"u}ller, Peter and Schwerhoff, Malte and Summers, Alexander J},
+  booktitle={International conference on verification, model checking, and abstract interpretation},
+  pages={41--62},
   year={2016},
-  publisher={Springer}
+  organization={Springer}
 }
 
 @article{Boogie2,
   title={This is {B}oogie 2},
-  author={K. Rustan M. Leino},
-  year={2008}
+  author={Leino, K Rustan M},
+  journal={manuscript KRML},
+  volume={178},
+  number={131},
+  pages={9},
+  year={2008},
+  publisher={Citeseer}
 }
 
-@article{caviart,
+@inproceedings{caviart,
   title={A generic intermediate representation for verification condition generation},
   author={Montenegro, Manuel and Pe{\~n}a, Ricardo and S{\'a}nchez-Hern{\'a}ndez, Jaime},
+  booktitle={International Symposium on Logic-Based Program Synthesis and Transformation},
+  pages={227--243},
   year={2015},
-  publisher={Springer}
+  organization={Springer}
 }
 
 @article{horn,
   title={Horn clauses as an intermediate representation for program analysis and transformation},
   author={Gange, Graeme and Navas, Jorge A and Schachte, Peter and S{\o}ndergaard, Harald and Stuckey, Peter J},
+  journal={Theory and Practice of Logic Programming},
+  volume={15},
+  number={4-5},
+  pages={526--542},
   year={2015},
   publisher={Cambridge University Press}
 }
@@ -124,7 +142,9 @@
 @article{LLVM,
   title={The {LLVM} instruction set and compilation strategy},
   author={Lattner, Chris and Adve, Vikram},
-  year={2002}
+  journal={CS Dept., Univ. of Illinois at Urbana-Champaign, Tech. Report UIUCDCS},
+  year={2002},
+  publisher={Citeseer}
 }
 
 @article{Dialyzer,
@@ -143,36 +163,43 @@
 @inproceedings{FormalizingLLVMIR,
   title={Formalizing the {LLVM} intermediate representation for verified program transformations},
   author={Zhao, Jianzhou and Nagarakatte, Santosh and Martin, Milo MK and Zdancewic, Steve},
+  booktitle={Proceedings of the 39th annual ACM SIGPLAN-SIGACT symposium on Principles of programming languages},
+  pages={427--440},
   year={2012}
 }
 
 @inproceedings{DPLL,
-  title={{DPLL(T)}: fast decision procedures},
+  title={{DPLL(T)}: {F}ast decision procedures},
   author={Ganzinger, Harald and Hagen, George and Nieuwenhuis, Robert and Oliveras, Albert and Tinelli, Cesare},
   booktitle={International Conference on Computer Aided Verification},
+  pages={175--188},
   year={2004},
   organization={Springer}
 }
 
 @inproceedings{cadar2008klee,
-  title={Klee: unassisted and automatic generation of high-coverage tests for complex systems programs.},
+  title={Unassisted and {A}utomatic {G}eneration of {H}igh-{C}overage {T}ests for {C}omplex {S}ystems {P}rograms},
   author={Cadar, Cristian and Dunbar, Daniel and Engler, Dawson R and others},
   booktitle={OSDI},
+  volume={8},
+  pages={209--224},
   year={2008}
 }
 
 @inproceedings{lindner2018no,
-  title={No panic! Verification of {R}ust programs by symbolic execution},
+  title={No panic! {V}erification of {R}ust programs by symbolic execution},
   author={Lindner, Marcus and Aparicius, Jorge and Lindgren, Per},
   booktitle={2018 IEEE 16th International Conference on Industrial Informatics (INDIN)},
+  pages={108--114},
   year={2018},
   organization={IEEE}
 }
 
 @inproceedings{astrauskas2022prusti,
-  title={The Prusti Project: Formal Verification for Rust},
+  title={The {P}rusti {P}roject: {F}ormal {V}erification for {R}ust},
   author={Astrauskas, Vytautas and B{\'\i}l{\`y}, Aurel and Fiala, Jon{\'a}{\v{s}} and Grannan, Zachary and Matheja, Christoph and M{\"u}ller, Peter and Poli, Federico and Summers, Alexander J},
   booktitle={NASA Formal Methods Symposium},
+  pages={88--108},
   year={2022},
   organization={Springer}
 }
@@ -181,46 +208,52 @@
   title={Cvc4},
   author={Barrett, Clark and Conway, Christopher L and Deters, Morgan and Hadarean, Liana and Jovanovi{\'c}, Dejan and King, Tim and Reynolds, Andrew and Tinelli, Cesare},
   booktitle={International Conference on Computer Aided Verification},
+  pages={171--177},
   year={2011},
   organization={Springer}
 }
 
 @article{dutertre2006yices,
-  title={The yices smt solver},
+  title={The {Y}ices {SMT} solver},
   author={Dutertre, Bruno and De Moura, Leonardo},
   journal={Tool paper at http://yices. csl. sri. com/tool-paper. pdf},
+  volume={2},
+  number={2},
+  pages={1--2},
   year={2006}
 }
 
 @inproceedings{bozzano2005mathsat,
-  title={The mathsat 3 system},
+  title={The {MATHSAT} 3 system},
   author={Bozzano, Marco and Bruttomesso, Roberto and Cimatti, Alessandro and Junttila, Tommi and Rossum, Peter van and Schulz, Stephan and Sebastiani, Roberto},
   booktitle={International Conference on Automated Deduction},
+  pages={315--321},
   year={2005},
   organization={Springer}
 }
 
 @inproceedings{moura2008z3,
-  title={Z3: An efficient SMT solver},
+  title={Z3: {A}n efficient {SMT} solver},
   author={Moura, Leonardo de and Bj{\o}rner, Nikolaj},
   booktitle={International conference on Tools and Algorithms for the Construction and Analysis of Systems},
+  pages={337--340},
   year={2008},
   organization={Springer}
 }
 
 @inproceedings{proper,
-  author={Manolis Papadakis and Konstantinos Sagonas},
-  title={A {PropEr} {I}ntegration of {T}ypes and {F}unction Specifications
-            with {P}roperty-{B}ased {T}esting},
-  booktitle={Proceedings of the 2011 ACM SIGPLAN Erlang Workshop},
-  year={2011},
-  publisher={ACM Press}
+  title={A {PropEr} {I}ntegration of {T}ypes and {F}unction Specifications with {P}roperty-{B}ased {T}esting},
+  author={Papadakis, Manolis and Sagonas, Konstantinos},
+  booktitle={Proceedings of the 10th ACM SIGPLAN workshop on Erlang},
+  pages={39--50},
+  year={2011}
 }
 
 @inproceedings{quickcheck,
-  title={QuickCheck testing for fun and profit},
+  title={Quick{C}heck testing for fun and profit},
   author={Hughes, John},
   booktitle={International Symposium on Practical Aspects of Declarative Languages},
+  pages={1--32},
   year={2007},
   organization={Springer}
 }
@@ -229,5 +262,6 @@
   title={Global value numbers and redundant computations},
   author={Rosen, Barry K and Wegman, Mark N and Zadeck, F Kenneth},
   booktitle={Proceedings of the 15th ACM SIGPLAN-SIGACT symposium on Principles of programming languages},
+  pages={12--27},
   year={1988}
 }

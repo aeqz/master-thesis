@@ -69,3 +69,7 @@ yices
 SIGPLAN-SIGACT
 PropEr
 satisfiability
+Tosin
+Abasi
+UIUCDCS
+Proc
