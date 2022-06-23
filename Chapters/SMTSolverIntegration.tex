@@ -3,8 +3,8 @@
 
 In order to implement our system, we will require to be able to interact with an
 \acrshort{smt} solver from Elixir. We have decided to use the Z3 theorem prover,
-which implements SMT-LIB, and to communicate with it precisely by using this
-standard. This makes possible for our system to allow integrating other 
+which supports SMT-LIB, and to communicate with it precisely by using this
+standard. This makes possible for our system to allow integrating other
 \acrshort{smt} solvers or to provide different communication implementations
 without requiring so much effort.
 
@@ -57,11 +57,11 @@ to provide a custom or reused connection and does not close it automatically.
 
 Regarding the contents of a \verb|with_conn/2| block, our \gls{dsl} currently
 supports a subset of SMT-LIB commands that is shown in the following section,
-but it is almost trivial to add support for new ones, being the biggest deal to
-parse its response if it has a specific one.  The expressions corresponding to
-logical formulas include support for variables, uninterpreted function
-applications, quantifiers, and built-in operators and logic connectives such as
-\verb|+|, \verb|!| and \verb|&&|.
+but it is almost trivial to add support for new ones, being the biggest
+challenge to parse its response if it has a specific one.  The expressions
+corresponding to logical formulas include support for variables, uninterpreted
+function applications, quantifiers, and built-in operators and logic connectives
+such as \verb|+|, \verb|!| and \verb|&&|.
 
 A longer example of using this binding to solve a \gls{csp} is shown in Appendix
 \ref{Appendix:hamiltonian}.
@@ -184,12 +184,10 @@ end
 Elixir protocols are mechanisms to achieve polymorphism and, in order to
 implement a connection with an \acrshort{smt} solver, it suffices to define an
 Elixir module with a data type that implements the \verb|Connection| protocol
-with these two functions.
-
-We provide a default implementation of this protocol to communicate with Z3
-through ports and allow the user to configure some of its parameters like the
-timeout, but other implementations involving different solvers and communication
-mechanisms should also be possible.
+with these two functions. We provide a default implementation of this protocol
+to communicate with Z3 through ports and allow the user to configure some of its
+parameters like the timeout, but other implementations involving different
+solvers and communication mechanisms should also be possible.
 
 All of this allows us to implement and provide the public \gls{api} of the 
 package under a top level module that defines the corresponding \gls{dsl} macros
@@ -460,8 +458,8 @@ end
 
 Assuming the defined macros to be in scope, and a \verb|conn| variable that
 represents a fresh connection with an \acrshort{smt} solver which has the
-\verb|Term| sort already defined, this would be a simple example of the usage of
-the \verb|eval/1| macro:
+\verb|Term| sort already defined, the following is a simple example of the usage
+of the \verb|eval/1| macro:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 eval conn do

@@ -225,10 +225,10 @@ iex> z = 3
 3
 \end{lstlisting}
 
-This operator also allows performing pattern matching, which destructures 
-expressions according to patterns in order to check for a given shape and bind
-subexpressions to variable names. They are particularly useful for dealing with
-collection value types:
+The \verb|=| operator also allows performing pattern matching, which
+destructures expressions according to patterns in order to check for a given
+shape and binds subexpressions to variable names. It is particularly useful for
+dealing with collection value types:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 iex> {x, 3} = {2, 3}
@@ -470,7 +470,7 @@ subset of the syntax of allowed commands that we are going to use:
 As a brief description for these commands, \verb|assert| adds a well-sorted
 formula to the current assertion level, \verb|pop| and \verb|push| respectively
 add and remove an assertion level from the stack. The latter allows us to
-restore the solver's state to the point in which the last \verb|push| was
+restore the solver's state to the point in which the latest \verb|push| was
 called.  \verb|check-sat| asks the solver whether the formulas from the stack
 are satisfiable or not.  \verb|declare-sort|, \verb|declare-const| and
 \verb|declare-fun| allow declaring new sorts, functions or constants (i.e.
@@ -490,7 +490,7 @@ The command responses are defined by the following syntax:
 where some commands have a specific success response, like \verb|sat| |
 \verb|unsat| | \verb|unknown| for \verb|check-sat|.
 
-This would be an example for checking the validity of the linear integer 
+The following is an example for checking the validity of the linear integer 
 arithmetic formula $x + 3 \leq y + 3 \Rightarrow x \leq y$:
 
 \begin{verbatim}
@@ -507,7 +507,8 @@ arithmetic formula $x + 3 \leq y + 3 \Rightarrow x \leq y$:
 (check-sat)
 \end{verbatim}
 
-We are going to check this formula in the following section.
+We are going to check this formula in the following section, and also in the 
+following chapter by using our Elixir Z3 bindings.
 
 \subsection{Z3}
 

@@ -35,7 +35,7 @@ function to return the maximum of three integer numbers:
 \begin{verbatim}
 method max3(x: int, y: int, z: int) returns (m: int)
   ensures m == x || m == y || m == z
-  ensures m >= x && m >= y && m >= y
+  ensures m >= x && m >= y && m >= z
 {
   if x > y && x > z { return x; }
   if y > z { return y; }
@@ -55,7 +55,7 @@ Elixir, instead. Dafny code is also translated into a verification \gls{ir},
 named Boogie, for which verification conditions are intended to be discharged by
 the Z3 theorem prover. These different levels of abstraction correspond to
 separate tools, each one with its own parser, whereas in our project we pretend
-to implement all of them in Elixir.
+to embed all of them in Elixir.
 
 \subsection{Intermediate representations}
 
@@ -101,7 +101,7 @@ provides a language for specification and programming, WhyML, that can be used
 as an \gls{ir} for the verification of C, Java, Ada, or to obtain automated
 correct-by-construction OCaml programs \citep{Why3Manual}.
 
-Other approaches try to use logic programs as an \gls{ir} throughout its regular
+Other approaches use logic programs as an \gls{ir} throughout its regular
 compilation process, as in \cite{horn}, and other ones put an effort into being
 a suitable target for modelling faithfully the semantics of different
 programming languages, as in \cite{caviart}. The latter has been used in a
@@ -112,10 +112,10 @@ semantics, one of them for generating verification conditions \citep{cavilisp}.
 
 \subsection{SMT solvers}
 
-At the bottom of the verification process, a theorem prover will try to obtain a
-proof for some verification conditions. \acrshort{smt} solvers in particular are
-gaining popularity for this task, and some current options are Z3 from Microsoft
-\citep{moura2008z3}, CVC4 \citep{barrett2011cvc4}, MathSAT
+At the lowest level of the verification process, a theorem prover will try to
+obtain a proof for some verification conditions. \acrshort{smt} solvers in
+particular are gaining popularity for this task, and some current options are Z3
+from Microsoft \citep{moura2008z3}, CVC4 \citep{barrett2011cvc4}, MathSAT
 \citep{bozzano2005mathsat} and Yices \citep{dutertre2006yices}. 
 
 There is also an international initiative, called SMT-LIB, aimed at facilitating
@@ -136,10 +136,9 @@ Erlang provides several libraries for property-based testing such as
 them are offered for Elixir through wrapper packages as \verb|PropCheck| for
 \gls{proper}.
 
-There are also packages implemented completely in Elixir, as \verb|StreamData|
-and \verb|TypeCheck|. This last one tries to take profit of the type
-specification mechanism of Elixir in order to automatically provide data
-generators.
+There are also packages implemented completely in Elixir, such as
+\verb|StreamData| and \verb|TypeCheck|. This last one tries to take profit of
+Elixir type specifications in order to automatically provide data generators.
 
 In this case, their goal is to disprove the correctness of the program by
 finding counterexamples for specified properties. Tools of this kind show the
