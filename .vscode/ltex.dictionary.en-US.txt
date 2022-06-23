@@ -66,3 +66,5 @@ booleans
 arities
 mathsat
 yices
+SIGPLAN-SIGACT
+PropEr

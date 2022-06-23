@@ -3,10 +3,11 @@
 
 \chapterquote{Do not fear mistakes - there are none}{Miles Davis}
 
-This chapter shows a system to verify code of the Elixir programming language.
-First, we define a formal language to model a subset of sequential Elixir code
-which also allows introducing ghost verification conditions. Then we show how to
-verify it by means of the \gls{ir} defined in Chapter
+This chapter shows a system to verify code written in a subset of the Elixir 
+programming language.  First, we define a formal language to model a subset of
+sequential Elixir code, named L2, which also allows introducing ghost
+annotations intended to help the verifier to prove the verification conditions.
+Then we show how to verify it by means of the \gls{ir} defined in Chapter
 \ref{cap:intermediateRepresentation}.
 
 We also show an overview of our implementation, written in Elixir itself,
@@ -45,30 +46,31 @@ following grammar:
 \Pat \ni P ::= c \mid x \mid [\:] \mid [P_1 \mid P_2] \mid \{ P_1, \ldots, P_n \}
 \]
 
-Note that the guard expressions $f_1, \ldots, f_n$ correspond to L1 expressions,
-due to their restricted nature.
+Note that the guard expressions $f_1, \ldots, f_n$ in a $\caseE$ correspond to
+L1 expressions, due to the constraints that Elixir's syntax poses on the syntax
+of guards.
 
 This language models a subset of the Elixir programming language with L1
-expressions as their direct counterparts in Elixir, the $\emptyE$ sequence and
-sequences as Elixir blocks, $\caseE$ expressions, and a simplified version of
-its pattern matching capabilities.  It also allows adding verification
-statements such as $\assertE$ and $\assumeE$ within $\ghostE$ blocks.
+expressions as their direct counterparts in Elixir, sequences as Elixir blocks,
+$\caseE$ expressions, and a simplified version of its pattern matching
+capabilities.  It also allows adding verification statements such as $\assertE$
+and $\assumeE$ within $\ghostE$ blocks.
 
 \subsection{Translation into L1}
 
 In the following, given a set $A$, we use the notation $[A]$ to denote the set
-of sequences of elements in $A$. If $x_1, \ldots, x_n$ we use the notation 
+of sequences of elements in $A$. If $x_1, \ldots, x_n \in A$ we use the notation
 $[x_1, \ldots, x_n]$ to denote such a sequence. We also use a list comprehension
 notation that is similar to the one in Haskell language. For example, $[(i, j)
-\mid i \leftarrow [1, 2], j \leftarrow [3, 4, 5]]$.
+\mid i \leftarrow [1, 2], j \leftarrow [3, 4, 5]]$ denotes the list $[(1, 3),
+(1, 4), (1, 5), (2, 3), (2, 4), (2, 5)]$.
 
 Let us define a function: $\trEXP{\_} : \Exp{2} \rightarrow [\Stm \times
 \Exp{1}]$ that, given an expression $E$ in the source language, generates a
 sequence of pairs $(S, e)$ where $S$ is the L1 statement that models the
 semantics of $E$, and $e$ is a L1 expression that represents the result to which
-$E$ is evaluated. The reason behind translating an L2 expression into a sequence
-is that control flow constructs such as $\caseE$ may yield to different possible
-execution paths. 
+$E$ is evaluated. Each pair returned by $\trEXP{\_}$ corresponds to an execution
+path produced by control flow constructs such as $\caseE$.
 
 We need an auxiliary function $\trMatch{\_}{\_} : \Exp{1} \times \Pat
 \rightarrow \Exp{1}$ that, given an L1 expression $e$ and a pattern $P$, returns
@@ -81,14 +83,16 @@ $\true$ if and only if $e$ matches $P$. Its definition is as follows:
 \trMatch{e}{[\:]} = e~\texttt{===}~{[\:]} \\
 \trMatch{e}{x} = \mathit{true}\\
 \trMatch{e}{\{P_1,\ldots,P_n\}}\\
-\qquad = \textit{is-tuple}(e)~\mathbf{and}~\textit{tuple-size}(e)~\texttt{===}~n~\mathbf{and}~(\mathbf{and}_{i=1}^n~\trMatch{\textit{elem}(e, i)}{P_i})\\
+\qquad = \textit{is-tuple}(e)~\mathbf{and}~\textit{tuple-size}(e)~\texttt{===}~n~\mathbf{and}~(\\
+\qquad\quad\quad\trMatch{\textit{elem}(e, 1)}{P_1}~\mathbf{and}~\dots~\mathbf{and}~\trMatch{\textit{elem}(e, n)}{P_n}\\
+\qquad\quad)\\
 \trMatch{e}{[P_1\mid P_2]}\\
 \qquad = \textit{is-nelist}(e)~\mathbf{and}~\trMatch{\textit{hd}(e)}{P_1}~\mathbf{and}~\trMatch{\textit{tl}(e)}{P_2}
 \end{array}
 \]
 
-Also, $\mathit{vars}(P)$ is a function to denote the $L1$ variable expressions
-that appear in a pattern $P$.
+Also, $\mathit{vars}(P)$ is a function that returns the L1 variables that appear
+in a pattern $P$.
 
 The $\emptyE$ expression is translated into an empty list:
 
@@ -102,29 +106,32 @@ moment, we set it as the empty list.
 
 L2 expressions that are contained within the syntax of L1 are translated as they
 are, but we generate an assertion to check if the singleton tuple which contains
-that expression is a tuple. This will force to introduce the expression in the
-generated L1 statements to be verified. Otherwise, bad formed expressions at the
-top level whose translation yields to verification failures may be ignored
-during the translation (e.g. \verb|true + 2|):
+that expression is a tuple. This assertion might seem trivially true, but it is 
+generated to check that the expression $e$ is well-formed (i.e. all the function
+applications within it satisfy their corresponding preconditions). Otherwise,
+ill formed expressions at the top level whose translation yields to verification
+failures may be ignored during the translation (e.g. \verb|true + 2|):
 
 \[
 \trEXP{e} = [(\assertE~\textit{is\mbox{-}tuple}(\{e\}), e)]
 \]
 
-Another approach would be to extend the L1 syntax with a new statement that just
-checks an L1 expression.
+An alternative to generating this trivial assertion would be to extend the L1
+syntax with a new statement that just checks the well-formedness of an L1
+expression.
 
-A $\ghostE$ expression is translated into an arbitrary $L1$ expression, for
-example the empty list, and the provided $L1$ statement as its semantics:
+A $\ghostE$ expression is translated into an arbitrary L1 expression, for
+example the empty list, and the provided L1 statement as its semantics:
 
 \[
 \trEXP{\ghostE~\doW~S~\Wend} = [(S, [])]
 \]
 
 Expressions of the form $P = E$ are translated into assertions that check
-whether the result of evaluating E matches the pattern $P$, and then assume the
-equality between $P$ and $E$.
+whether the result of evaluating E matches the pattern $P$ and then assume the
+equality between $P$ and $E$, as shown in Figure \ref{fig:deftr}.
 
+\begin{figure}
 \[
 \begin{array}{l}
 \trEXP{P = E} = [(S_1;S_1',e_1), \dots, (S_n;S_n', e_n)] \\
@@ -144,15 +151,20 @@ equality between $P$ and $E$.
 \end{array}
 \end{array}
 \]
+\caption{Translation of the L2 pattern matching expression into L1}
+\label{fig:pattr}
+\end{figure}
 
 In order to translate a sequence of expressions $E_1;E_2$ we have to append 
 every statement generated from the translation of $E_2$ to every statement 
 generated from the translation of $E_1$. We must deal carefully with $\ghostE$
 expressions because, as its translation also returns an L1 expression, it must
-be skipped in order to avoid altering the semantics of a block.
+be skipped in order to avoid altering the semantics of a block. That is why we 
+have to distinguish cases depending on whether $E_2$ is a ghost expression or
+not.
 
-This will be its translation when the last expression is a $\ghostE$ one, taking
-into account that \verb|;| is associative:
+The following clause describes the translation of a sequence when the last
+expression is a $\ghostE$ one, taking into account that \verb|;| is associative:
 
 \[
 \begin{array}{l}
@@ -164,8 +176,8 @@ into account that \verb|;| is associative:
 \end{array}
 \]
 
-And this will be the general case when the previous one does not apply (i.e.
-$E_2$ is not a sequence ending in a $\ghostE$):
+And the following shows the general case when the previous one does not apply
+(i.e.  $E_2$ is not a sequence ending in a $\ghostE$):
 
 \[
 \begin{array}{l}
@@ -178,8 +190,11 @@ $E_2$ is not a sequence ending in a $\ghostE$):
 \end{array}
 \]
 
-The translation of $\caseE$ expressions is more complex:
+The translation of $\caseE$ expressions, shown in Figure \ref{fig:casetr}, is
+more complex. It can be described as, for each translation of $E$, for each
+branch and for each translation of the resulting expression of that branch:
 
+\begin{figure}
 \[
 \begin{array}{l}
 \trEXP{\caseE~E~\doW~\overline{P_i~\whenE~f_i \rightarrow E_i}^n~\Wend}\\
@@ -192,8 +207,8 @@ The translation of $\caseE$ expressions is more complex:
 \quad\quad\textbf{or}~(\andE{e_{n,j}}{(\orE{(\textbf{not}~e_j~\texttt{===}~P_n)}{f_n})}); \\
 \assumeE~(\textbf{not}~(e_{1,j}~\textbf{and}~(\orE{(\textbf{not}~e_j~\texttt{===}~P_1)}{f_1})))~\textbf{and}~\cdots\\
 \quad\quad\textbf{and}~(\textbf{not}~(e_{i-1,j}~\textbf{and}~(\orE{(\textbf{not}~e_j~\texttt{===}~P_{i - 1})}{f_{i - 1}}))); \\
-\assumeE~e_{i,j}~\textbf{and}~(\orE{(\textbf{not}~e_j~\texttt{===}~P_{i})}{f_{i}});\\
-\assumeE~e_j~\texttt{===}~P_j; \\
+\assumeE~e_j~\texttt{===}~P_i; \\
+\assumeE~e_{i,j}~\textbf{and}~f_{i};\\
 S_{i,k}', e_{i,k}')
 \end{array}  \middle\vert
 \begin{array}{l}
@@ -210,40 +225,41 @@ k \leftarrow [1..s_i] \\
 \end{array}
 \end{array}
 \]
-
-It can be described as, for each translation of $E$, for each branch and for 
-each translation of the resulting expression of that branch:
+\caption{Translation of the L2 case expression into L1}
+\label{fig:casetr}
+\end{figure}
 
 \begin{enumerate}
-  \item Declare the involved variables for every pattern matching. This is because guards $f_i$ may refer to variables bound in its pattern.
-  \item Check that at least one pattern and guard holds. The guards $f_i$ are checked under the assumption that its pattern variables have been bound, which is a disjunction because there is no implication connective in L1 expressions.
+  \item Declare the variables involved in every pattern matching. This is because guards $f_i$ may refer to variables bound in its pattern.
+  \item Check that at least one pattern and guard holds. The guards $f_i$ are checked under the assumption that their pattern variables have been bound, which is a disjunction because there is no implication connective in L1 expressions (e.g. $((\mathbf{not} e_j === P_1)~\textbf{or}~f_1)$ instead of $((e_j === P_1) \Rightarrow f_1)$).
   \item Assume that no previous pattern and guard holds, with the same considerations explained above, and that the current one does.
   \item Assume that the branch pattern does match.
   \item Include the generated L1 statements for the expression corresponding to that branch.
 \end{enumerate}
 
 This models appropriately the short-circuit semantics of the \verb|case|
-construct because, if some branch will never be evaluated, assuming its pattern
-and guard will make the hypothesis state inconsistent and everything would be
-$\true$ after that, so it will not yield to validation failures.
+construct because, given a value for the discriminant on a branch that is not 
+going to be evaluated, its pattern and guards are assumed, which will make the 
+proof state inconsistent, hence validating every assertion afterwards.
 
 \subsection{Verifying L2 expressions}
 \label{sec:verificationprocess}
 
-We will verify an L2 expression by verifying its corresponding translation into
-or \gls{ir}.
+Before dealing with function definitions, in this section we show how to verify 
+top-level L2 expressions.
 
-First, for the verification of an L2 expression, as we want to allow reusing 
-variable names, but this would be problematic in the generated L1 counterpart,
-we consider a function $ssa$ to transform an L2 expression into \gls{ssa} form
-as in the following example:
+First, for the verification of an L2 expression, as Elixir allows rebinding
+local variables, but this would be problematic in the generated L1 counterpart
+since it could lead to name conflicts, we consider a function $ssa$ to transform
+an L2 expression into \gls{ssa} form \citep{rosen1988global} as in the following
+example:
 
-$$E =  (x = 2;x = 3 + x; y = x * x)$$
-$$\mathit{ssa}(E) = (x_1 = 2;x_2 = 3 + x_1;y_1 = x_2 * x_2)$$
+$$\text{if}~E =  (x = 2;x = 3 + x; y = x * x)$$
+$$\text{then}~\mathit{ssa}(E) = (x_1 = 2;x_2 = 3 + x_1;y_1 = x_2 * x_2)$$
 
 Then, we can obtain a single L1 statement that considers all the generated
-statements by wrapping them inside $\blockE$ expressions to be verified 
-independently one after the other:
+execution paths by wrapping them inside $\blockE$ expressions to be verified 
+independently of each other:
 
 \[
 \begin{array}{l}
@@ -255,12 +271,12 @@ independently one after the other:
 \end{array}
 \]
 
-Finally, the resulting expression from our \gls{ir} can be translated into our
-low level verification language L0, as shown in Section \ref{sec:translationL0}
-with the $\trStm{\_}$ function, which has its semantics defined in terms of the
-$\gls{smt}$ problem.
+Finally, the resulting expression from our \gls{ir} can be further translated
+into our low level verification language L0, as shown in Section
+\ref{sec:translationL0} with the $\trStm{\_}$ function, which has its semantics
+defined in terms of the $\gls{smt}$ problem.
 
-We also define a function $\mathit{elixir}(E)$ that turns an L2 expression $E$
+We also define a function $\mathit{elixir}(E)$ which turns an L2 expression $E$
 into its counterpart with all its $\ghostE$ subexpressions removed from every 
 sequence expression. If $E$ itself is one of them, then the result is $\emptyE$.
 
@@ -271,20 +287,22 @@ We will also define formally a representation for a set of user-defined
 functions with its different overloads, which correspond to Elixir functions
 that a user can define in an Elixir \verb|module|.
 
-A single function definition of a function with arity $n$ is stated as
+A single clause of a function with arity $n$ is stated as
 
 \[
 \mathit{def} \equiv \left(\{ p \}  \quad (P_1, \dots, P_n)~B \quad \{ q \} \right)
 \]
 
-where the $p \in \Exp{1}$ and $q \in \Exp{1}$ denote a specified precondition
-and a postcondition, $P_1, \dots, P_n$ are the parameter patterns and $B \in
-\Exp{2}$ is its defined body.
+where $p \in \Exp{1}$ and $q \in \Exp{1}$ denote a specified precondition and a
+postcondition, $P_1, \dots, P_n$ are the parameter patterns and $B \in \Exp{2}$
+is its defined body. The pre/postcondition may refer to the variables of the
+patterns $P_1, \dots, P_n$. 
 
-Given a function named $f$ with arity $n$, we denote its overloaded definitions
-as $\Defs{f/n}$ = $(\mathit{def}_1,\dots,\mathit{def}_k)$, where its definition
-order matters. For each function, we are going to translate its definitions into
-a $\caseE$ L2 expression that models them, as in Figure \ref{fig:deftr}.
+Given a function named $f$ with arity $n$, we denote its clauses by $\Defs{f/n}$
+= $(\mathit{def}_1,\dots,\mathit{def}_k)$, where the order between clauses
+matters, since the clauses of the definition may contain overlapping patterns.
+For each function, we are going to translate its clauses into a single $\caseE$
+L2 expression that models them, as in Figure \ref{fig:deftr}.
 
 \begin{figure}
 \[
@@ -322,102 +340,33 @@ a $\caseE$ L2 expression that models them, as in Figure \ref{fig:deftr}.
 \label{fig:deftr}
 \end{figure}
 
-We have used the fact that the rules in Elixir to select which function
-definition takes effect are similar to those of the Elixir \verb|case|
-expression, using the guards to assume the preconditions and its branch pattern
-matching to allow using pattern matching also in the function parameters.
+We have used the fact that the rules that Elixir uses to select which function
+clause takes effect are similar to those of the Elixir \verb|case| expression,
+using the guards to assume the preconditions and its branch pattern matching to
+allow using pattern matching also in the function parameters. The $\assumeE$
+statement over the auxiliary variable \textit{res} allows the postcondition to
+refer to the result of the function invocation as $f(\mathit{arg_1}, \dots,
+\mathit{arg_2})$.
 
 Also, a branch at the end that always succeeds is required because, as the 
 function arguments are unknown at this point, it is not possible to know in 
-advance if no branch will match. 
+advance if no branch will match. An alternative to this would be to assume that
+some branch will match.
 
-A set of function overloaded definitions can be verified by applying
-$\trDef{\_}$ to each one of them and also applying the verification process
-shown in Section \ref{sec:verificationprocess}.
-
-\subsection{Unfolding user-defined functions}
-
-To allow the user to define and use verification functions in a restricted way,
-because we have not dealt with termination concerns in this project, we extend 
-the L2 language with a new verification expression:
-
-\[
-\begin{array}{rcll}
-\Exp{2} \ni E & ::= & & \\
-& | & \vdots \\
-& | & \unfoldE~f(e_1,\dots,e_n) & \{ \textrm{definition unfold} \} \\
-\end{array}
-\]
-
-where $e_i \in \Exp{1} \forall i. i\in \{1..n\}$.
-
-It must be specially handled in the sequence expression translation, as 
-in the case of trailing $\ghostE$ expressions:
-
-\[
-\begin{array}{l}
-\trEXP{E;\unfoldE~f(e'_1,\dots,e'_k)}  = [(S_i;S'_j,e_i) \mid i \leftarrow [1..n], j \leftarrow [1..m]] \\
-\qquad 
-\begin{array}{ll}
-\textbf{where} & [(S_1,e_1),\dots,(S_n, e_n)] = \trEXP{E} \\
-\textbf{where} & [(S'_1,\_),\dots,(S'_m, \_)] = \trEXP{\unfoldE~f(e'_1,\dots,e'_k)} \\
-\end{array}
-\end{array}
-\]
-
-Also, the $\mathit{elixir}$ function should deal with $\unfoldE$ expressions 
-similarly as it deals with $\ghostE$ ones.
-
-Its own translation also takes advantage of the $\caseE$ expression, as we did
-for user-defined function verification:
-
-\[
-\begin{array}{l}
-\trEXP{\unfoldE~f(e_1,\dots,e_n)} = \trEXP{E}\\
-\textbf{where } (\mathit{def}_1, \dots, \mathit{def}_k) = \Defs{f/n}\\
-\phantom{\textbf{where }} \mathit{def}_i = \left(\{ p_i \}  \quad (P_{i,1}, \dots, P_{i,n})~B_i \quad \{ q_i \} \right) \\
-\phantom{\textbf{where }} E = \left[\begin{array}{l}
-\caseE~\{e_1,\dots,e_n\}~\doW \\
-\quad \{P_{1,1},\dots,P_{1,n}\}~\whenE~p_1 \rightarrow\\ 
-\quad\quad \mathit{res} = \mathit{elixir}(B_1); \\
-\quad\quad \ghostE~\doW\\ 
-\quad\quad\quad\assumeE~res~\mathit{===}~f(e_1,\dots,e_n);\\
-\quad\quad\quad\assumeE~q_1\\
-\quad\quad \Wend\\
-\quad\vdots\\
-\quad \{P_{k,1},\dots,P_{k,n}\}~\whenE~p_k \rightarrow\\ 
-\quad\quad \mathit{res} = \mathit{elixir}(B_k); \\
-\quad\quad \ghostE~\doW\\ 
-\quad\quad\quad\assumeE~res~\mathit{===}~f(e_1,\dots,e_n);\\
-\quad\quad\quad\assumeE~q_k\\
-\quad\quad \Wend\\
-\Wend
-\end{array}
-\right]
-\end{array}
-\]
-
-In this case, in contrast with the generated $\caseE$ for verifying function
-definitions, the postconditions are assumed, and we do not add an extra branch
-that always holds because the function arguments are known.
-
-Also, the verification expressions are removed from the body expansions in order
-to avoid possible $\unfoldE$ expressions that lead to non-terminating recursion.
-
-It would be possible to define it allowing $L2$ expressions as arguments, but we
-have taken this approach because the resulting translation is simpler and
-$\unfoldE~f(E)$ with $E \in \Exp{2}$ can be expressed as $(e =
-E;\unfoldE~f(e))$.
+A set of function definitions can be verified by applying $\trDef{\_}$ to each
+one of them and also applying the $\mathit{verification}$ function shown in
+Section \ref{sec:verificationprocess}.
 
 \subsection{Termination}
 
-Regarding termination, we are not verifying whether a recursive function 
-definition terminates or not, which could be addressed by means of a ranking
-function over its arguments.
+Regarding termination, in this thesis we do not verify whether a recursive
+function definition terminates or not, which could be addressed by means of a
+ranking function over its arguments. 
 
-For this purpose, we have proposed a set of axioms based on $\Term$ types in
-Section \ref{sec:termsize}, which can help in proving that the destructuring of
-a term always leads to smaller ones.
+This ranking function could be supplied by the user, and may depend on the sizes
+of the arguments. For this purpose, we have proposed a set of axioms based on
+$\Term$ types in Section \ref{sec:termsize}, which can help in proving that the
+destructuring of a term always leads to smaller subterms.
 
 \section{Implementation}
 
