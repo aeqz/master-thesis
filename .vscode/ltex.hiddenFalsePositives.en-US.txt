@@ -69,3 +69,4 @@
 {"rule":"EN_A_VS_AN","sentence":"^\\QWe could not use the built-in \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q for it, which would be as usual when transforming an \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q by propagating a state, because the pattern matching case was difficult to handle.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhich, on the one hand, verifies the functions defined with the \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q macro at compile-time and, on the other hand, generates their corresponding definitions without verification code that will be finally compiled.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qwhere the order between clauses matters, since the clauses of the definition may contain overlapping patterns.\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QWe must also offer an \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q for allowing its usage when writing Elixir code like in the following example:\\E$"}
