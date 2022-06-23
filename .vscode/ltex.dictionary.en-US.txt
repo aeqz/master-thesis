@@ -68,3 +68,4 @@ mathsat
 yices
 SIGPLAN-SIGACT
 PropEr
+satisfiability

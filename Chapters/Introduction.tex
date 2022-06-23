@@ -9,21 +9,21 @@ and also how it is going to be approached.
 
 This project started as an attempt to bring features of code verification, in
 the light-weight manner of systems such as Dafny \citep{DafnyManual}, to the
-Elixir programming language that, from the point of view of a programmer, may be
-also considered as a light-weight version of Erlang.
+Elixir programming language which, from the point of view of a programmer, may
+be also considered as a light-weight version of Erlang.
 
-The choice of Elixir is twofold, on the one hand because it seemed interesting 
-to apply verification techniques to a dynamically typed language and, on the
-other hand, because it is a suitable language for developing \gls{dsl}s and to 
-extend it with metaprogramming via macro expressions that are expanded at
+The choice of Elixir is twofold. On the one hand because it seems interesting to
+apply verification techniques to a dynamically typed language and, on the other
+hand, because Elixir is a suitable language for developing \gls{dsl}s, since we
+can extend it with metaprogramming via macro expressions that are expanded at
 compile time.
 
-At the highest level, our idea is to provide macros to write verification 
-expressions in between Elixir code, and to specify functions in the form of
-preconditions and postconditions within a module. The module functions would
-then be left during compilation without the verification code to be executed
-and, once all of them had been collected, a verification process would verify
-them also at compile-time.
+At the highest level, our idea is to provide macros to annotate Elixir code with
+ghost (i.e. verification-related), and to specify functions in the form of
+preconditions and postconditions within a module. These annotations would be
+removed before compiling the code of the functions into bytecode and, once all
+of them had been collected, a verification process would verify them also at
+compile-time.
 
 \textcolor{red}{TODO}: I will put a diagram with the above here.
 
@@ -41,58 +41,79 @@ solvers for its verification.
 
 In order to achieve the main goal, we have proposed several possible sub-goals.
 One of them is to integrate \acrshort{smt} solvers in Elixir with a \gls{dsl} of
-macros like in the following draft, which was in fact one of our initial
-sketches:
+macros, like in the following example that declares some sorts, functions and
+constants, then adds to the solver state some formulas corresponding to the
+theory of uninterpreted functions and linear arithmetic, and then checks the 
+satisfiability of the solver state:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-declare_sort :term, 0
-declare_fun is_int, :term :: :bool
-declare_fun int_val, :term :: :int
-declare_consts [x: :term, result: :term]
+declare_sort Term
+declare_fun is_int: [term] :: Bool,
+            int_val: [Term] :: Int
 
-assert is_int(x)
-assert is_int(result)
-assert int_val(result) == int_val(x) + int_val(x)
+declare_const x: Term, 
+              result: Term
+
+assert :is_int.(:x)
+assert :is_int.(:result)
+assert :int_val.(:result) == :int_val.(:x) + :int_val.(:x)
+
+check_sat
 \end{lstlisting}
 
-Another one is to develop a verification \gls{ir} to express Elixir terms and
-its dynamically typed nature with simple constructs for its verification, also
-like in the following preliminary draft:
+Another sub-goal is to develop a verification \gls{ir} to express Elixir terms
+and its dynamically typed nature with simple constructs for its verification,
+also like in the following example:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 havoc x
 havoc result
 
-assume integer(x)
-assume integer(result)
+assume is_integer(x)
+assume is_integer(result)
 assume result === x + x
 assert result === 2 * x 
 \end{lstlisting}
 
-Then, we must define a translation from this \gls{ir} into the \acrshort{smt}
-solver \gls{dsl} for its verification and, finally, we must also provide a
-mechanism to translate a subset of the Elixir programming language into the
-verification \gls{ir}, together with an \gls{api} for allowing its usage when
-writing Elixir code like in the following draft:
+We refer to our \gls{ir} by the name L1, as this project is divided in three
+layers of abstraction.
+
+Then, we must define a translation from this \gls{ir} into a simple language,
+named L0, which is suitable to be verified by using our \acrshort{smt} solver
+\gls{dsl}. This language offers control flow and failure signaling as in the
+following example:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-@requires integer(x)
-@ensures [integer(:result), :result = 2 * x]
+declare x
+declare result 
+
+when_unsat is_boolean(is_integer(x)) do 
+  add boolean_value(is_integer(x))
+else 
+  fail "Not a boolean"
+end
+\end{lstlisting}
+
+Finally, we must also provide a mechanism to translate a subset of the Elixir
+programming language together with ghost verification expressions, named L2,
+into the verification \gls{ir}. We must also offer an \gls{api} for allowing its
+usage when writing Elixir code like in the following example:
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+@verifier require is_integer(x)
+@verifier ensures is_integer(dup(x)) and dup(x) === 2 * x
 defv dup(x) do
   x + x
 end
 \end{lstlisting}
-
-Note that our \gls{dsl}s, which will be shown through the following chapters,
-did not end up being exactly as in these initial drafts, but they help in 
-understanding what we pretend.
 
 \subsection{Non-goals}
 
 We have left some points as possible future work. The first one is that we are
 going to deal only with sequential Elixir programs and not with concurrent ones.
 Even for the sequential Elixir part we are going to support only a small subset 
-to start with.
+to start with. Some non supported features are for example exceptions,
+higher-order functions and the Elixir \verb|pin| operator.
 
 Also, we are going to deal only with partial verification for the moment and not
 to verify or reason about termination. Nevertheless, we will discuss some ideas 
@@ -108,11 +129,12 @@ As a work plan, we will follow the sub-goals in the same order in which we have
 mentioned them, preceded by a training period for acquiring the required
 knowledge and practice with the Elixir programming language.
 
-Chapter \ref{cap:preliminaries} introduces the required tools and concepts, 
-mainly Elixir and \acrshort{smt} solvers, and corresponds to the training
-period. Chapter \ref{cap:smtSolverIntegration} presents our \acrshort{smt}
-solver integration for Elixir and a formalization that will allow us to verify
-expressions of our \gls{ir}, which is addressed in Chapter
-\ref{cap:intermediateRepresentation}. Finally, Chapter 
-\ref{cap:elixirCodeVerification} shows the verification system and a preliminary
-overview of the resulting tool.
+Chapter \ref{cap:stateOfTheArt} shows the current research, tools and techniques
+related to our project, and Chapter \ref{cap:preliminaries} introduces the
+required tools and concepts, mainly Elixir and \acrshort{smt} solvers, both
+chapters corresponding to the training period. Chapter
+\ref{cap:smtSolverIntegration} presents our \acrshort{smt} solver integration
+for Elixir and a formalization that will allow us to verify expressions of our
+\gls{ir}, which is addressed in Chapter \ref{cap:intermediateRepresentation}.
+Finally, Chapter \ref{cap:elixirCodeVerification} shows the verification system
+and a preliminary overview of the resulting tool.
