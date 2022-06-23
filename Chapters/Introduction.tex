@@ -100,7 +100,7 @@ into the verification \gls{ir}. We must also offer an \gls{api} for allowing its
 usage when writing Elixir code like in the following example:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-@verifier require is_integer(x)
+@verifier requires is_integer(x)
 @verifier ensures is_integer(dup(x)) and dup(x) === 2 * x
 defv dup(x) do
   x + x

@@ -43,6 +43,7 @@ Let us define the syntax of L1 expressions and statements:
  & | & S_1;S_2 & \{ \textrm{sequential evaluation} \}\\
  & | & \assumeE~e & \{ \textrm{assume a formula} \}\\
  & | & \assertE~e & \{ \textrm{assert a formula} \}\\
+ & | & \unfoldE~f(e_1, \dots, e_n) & \{ \textrm{definition unfolding} \}\\
 \end{array}
 \]
 
@@ -389,11 +390,30 @@ translated term components:
 \end{array}
 \]
 
-The translation for lists is defined recursively, with the empty list as the
-base case. The generated L0 expressions define the corresponding heads and tails
-for the generated list terms, and it does not require the second argument for
-the list constructor to be a list:
+For example, this would be the translation of the tuple $\{2, x\}$:
 
+\[
+\begin{array}{l}
+\trExp{\gamma}{\{2, x\}} \equiv (\epsilon, \mathit{2\mbox{-}tuple}(2,\hat{x}))\\
+\qquad \textbf{where } \epsilon = \left[ 
+\begin{array}{l}
+\addE~\mathit{is\mbox{-}integer}(\mathit{integer\mbox{-}lit}(2));\\
+\addE~\mathit{integer\mbox{-}value}(\mathit{integer\mbox{-}lit}(2)) = 2;\\
+\addE~\mathit{is\mbox{-}tuple}(\mathit{2\mbox{-}tuple}(2,\hat{x}));\\
+\addE~\mathit{tuple\mbox{-}size}(\mathit{2\mbox{-}tuple}(2,\hat{x})) = 2;\\
+\addE~\mathit{elem}(\mathit{2\mbox{-}tuple}(2,\hat{x}), 0) = 2;\\
+\addE~\mathit{elem}(\mathit{2\mbox{-}tuple}(2,\hat{x}), 1) = \hat{x}
+\end{array}
+\right]
+\end{array}
+\]
+
+The translation for lists is defined recursively, with the empty list as the
+base case, as shown in Figure \ref{fig:listtr}. The generated L0 expressions
+define the corresponding heads and tails for the generated list terms, and it
+does not require the second argument for the list constructor to be a list:
+
+\begin{figure}
 \[
 \begin{array}{l}
 \trExp{\_}{[]} \equiv (
@@ -412,9 +432,39 @@ the list constructor to be a list:
   \right]
 \end{array}
 \]
+\caption{Translation of the list L1 expressions into L0}
+\label{fig:listtr}
+\end{figure}
 
-A more complex case is that of function application:
+For example, this would be the translation of the list $[2, x]$:
 
+\[
+\begin{array}{l}
+\trExp{\gamma}{[2, x]} \equiv (\epsilon, \mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil})))\\
+\qquad \textbf{where } \epsilon = \left[ 
+\begin{array}{l}
+\addE~\mathit{is\mbox{-}integer}(\mathit{integer\mbox{-}lit}(2));\\
+\addE~\mathit{integer\mbox{-}value}(\mathit{integer\mbox{-}lit}(2)) = 2;\\
+\addE~\isnelist{\mathit{cons}(\hat{x}, \mathit(nil))};\\
+\addE~\mathit{hd}(\mathit{cons}(\hat{x}, \mathit(nil))) = \hat{x};\\
+\addE~\mathit{tl}(\mathit{cons}(\hat{x}, \mathit(nil))) = \mathit{nil};\\
+\addE~\isnelist{\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))};\\
+\addE~\mathit{hd}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = 2;\\
+\addE~\mathit{tl}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = \mathit{cons}(\hat{x}, \mathit(nil));\\
+\end{array}
+\right]
+\end{array}
+\]
+
+A more complex case is that of function application, as shown in Figure 
+\ref{fig:functr}. Firstly, we generate the L0 expression $\epsilon_i$
+corresponding to each argument $e_i$, and its corresponding uninterpreted term
+$t_i$. Then, we check that at least one preconditions holds and, finally, for
+each pre/postcondition pair of the specification of the function being applied,
+we generate code that checks whether the precondition holds and, in case it
+does, we assert both the precondition and postcondition.
+
+\begin{figure}
 \[
 \begin{array}{l}
 \trExp{\gamma}{f(e_1, \ldots, e_n)} \equiv (\epsilon_1; \dots; \epsilon_n; \epsilon; \overline{\epsilon_\sigma}^{\sigma \in \Spec{f}}, \widehat{f}(t_1, \ldots, t_n))\\
@@ -437,13 +487,9 @@ A more complex case is that of function application:
 \right] \\
 \end{array}
 \]
-
-Firstly, we generate the L0 expression $\epsilon_i$ corresponding to each 
-argument $e_i$, and its corresponding uninterpreted term $t_i$. Then, we check 
-that at least one preconditions holds and, finally, for each pre/postcondition
-pair of the specification of the function being applied, we generate code that
-checks whether the precondition holds and, in case it does, we assert both the
-precondition and postcondition.
+\caption{Translation of the function application L1 expression into L0}
+\label{fig:functr}
+\end{figure}
 
 We distinguish the cases of logical connectives from function application
 because of their specific short-circuit semantics in Elixir. Their corresponding 
@@ -577,6 +623,35 @@ its boolean value is $\true$:
 \end{array}\right]
 \qquad \textbf{where}~(\epsilon, t) = \trExps{e}
 \]
+
+Finally, the translation of the $\unfoldE$ statement, shown in Figure 
+\ref{fig:unfoldtr}, relies on having a user-provided definition for the involved
+function body as a parameterized L1 expression, and also a user-provided
+pre/postcondition pair specification also as parameterized L1 expressions.
+
+\begin{figure}
+\[
+\begin{array}{l}
+\trStm{\unfoldE~f(e_1, \dots, e_n)} \equiv \epsilon;\epsilon'\\
+\qquad \textbf{where } \epsilon = \trStm{\assumeE~f(e_1, \dots, e_n)~\texttt{===}~\Body{f}(e_1, \dots, e_n)}\\
+\qquad \phantom{\textbf{where }} (p, q) = \UserSpec{f}\\
+\qquad\qquad\qquad\qquad (\epsilon_p, t_p) = \trExps{p(e_1\ldots,e_n)}\\
+\qquad\qquad\qquad\qquad \epsilon' = \left[ 
+\begin{array}{l}
+\epsilon_p;\\
+\whenUnsatW~\addE~\neg\isboolean{t_p}~\doW\\
+\quad\whenUnsatW~\addE~\neg\booleanvalue{t_p}~\doW\\
+\quad\quad\trStm{\assumeE~p(e_1\ldots,e_n)};\\
+\quad\quad\trStm{\assumeE~q(e_1\ldots,e_n)}\\
+\quad\elseW~\skipE\\
+\elseW~\skipE
+\end{array}
+\right] \\
+\end{array}
+\]
+\caption{Translation of the $\mathbf{unfold}$ L1 statement into L0}
+\label{fig:unfoldtr}
+\end{figure}
 
 \subsection{Term size modelling}
 \label{sec:termsize}

@@ -284,7 +284,7 @@ sequence expression. If $E$ itself is one of them, then the result is $\emptyE$.
 \label{sec:verifyuserdefined}
 
 We will also define formally a representation for a set of user-defined
-functions with its different overloads, which correspond to Elixir functions
+functions with their different overloads, which correspond to Elixir functions
 that a user can define in an Elixir \verb|module|.
 
 A single clause of a function with arity $n$ is stated as
@@ -298,11 +298,14 @@ postcondition, $P_1, \dots, P_n$ are the parameter patterns and $B \in \Exp{2}$
 is its defined body. The pre/postcondition may refer to the variables of the
 patterns $P_1, \dots, P_n$. 
 
-Given a function named $f$ with arity $n$, we denote its clauses by $\Defs{f/n}$
-= $(\mathit{def}_1,\dots,\mathit{def}_k)$, where the order between clauses
-matters, since the clauses of the definition may contain overlapping patterns.
-For each function, we are going to translate its clauses into a single $\caseE$
-L2 expression that models them, as in Figure \ref{fig:deftr}.
+Given a function named $f$ with arity $n$, we denote its clauses by 
+
+$$\Defs{f/n} = (\mathit{def}_1,\dots,\mathit{def}_k)$$
+
+where the order between clauses matters, since the clauses of the definition may
+contain overlapping patterns.  For each function, we are going to translate its
+clauses into a single $\caseE$ L2 expression that models them, as in Figure
+\ref{fig:deftr}.
 
 \begin{figure}
 \[
@@ -355,7 +358,11 @@ some branch will match.
 
 A set of function definitions can be verified by applying $\trDef{\_}$ to each
 one of them and also applying the $\mathit{verification}$ function shown in
-Section \ref{sec:verificationprocess}.
+Section \ref{sec:verificationprocess}. Future work may require allowing the user
+to unfold a function definition as stated in this section, with multiple clauses
+and their bodies provided as L2 expressions, in the same way that $\unfoldE$
+allowed to unfold a single function definition clause with its body provided as
+an L1 expression in Section \ref{sec:translationL0}.
 
 \subsection{Termination}
 
@@ -552,13 +559,9 @@ def remove_verification(ast) do
     {:__block__, meta, es} ->
       {:__block__, meta,
        Enum.reject(es, fn
-         {:unfold, _, _} -> true
          {:ghost, _, _} -> true
          _ -> false
        end)}
-
-    {:unfold, _, _} ->
-      {:__block__, [], []}
 
     {:ghost, _, _} ->
       {:__block__, [], []}
@@ -568,3 +571,7 @@ def remove_verification(ast) do
   end)
 end
 \end{lstlisting}
+
+\begin{lstlisting}[language=elixir,numbers=none,frame=none]
+  
+\end{lstlisting} 
