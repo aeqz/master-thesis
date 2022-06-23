@@ -399,8 +399,9 @@ defmodule Example do
 end
 \end{lstlisting}
 
-which verifies during compilation and leaves in there the function definitions
-without verification code to be executed.
+which, on the one hand, verifies the functions defined with the \verb|defv|
+macro at compile-time and, on the other hand, generates their corresponding
+definitions without verification code that will be finally compiled.
 
 If we change the literal \verb|2| from the example by \verb|3|, we get the
 following error:
@@ -448,7 +449,7 @@ end
 \end{lstlisting}
 
 where we also have implemented an auxiliary function to obtain the variables of
-a pattern, as L1 variable expressions
+a pattern as L1 variable expressions
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 @spec vars(Pat.ast) :: MapSet.t(L1Exp.ast)
@@ -485,9 +486,9 @@ an L2 program into \gls{ssa} form:
 \end{lstlisting}
 
 We could not use the built-in \verb|Macro.traverse/4| for it, which would be as
-usual when transforming \gls{ast} with state, because the pattern matching case
-was difficult to handle. It was easier in contrast by defining an explicit
-recursive function:
+usual when transforming an \gls{ast} by propagating a state, because the pattern
+matching case was difficult to handle. It was easier in contrast by defining an
+explicit recursive function:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defp ssa_rec({:=, _, [p, e]}, state) do
@@ -525,7 +526,8 @@ end
 
 Note that each possible path of the translation must be verified in an
 independent proof context, so one option is to wrap each one into a \verb|block|
-statement. Another one could be to use a fresh \acrshort{smt} solver connection.
+statement. Another one could be to use a fresh \acrshort{smt} solver connection
+for each path.
 
 \subsection{User-defined functions verification}
 
@@ -566,43 +568,3 @@ def remove_verification(ast) do
   end)
 end
 \end{lstlisting}
-
-\subsection{User-defined functions unfolding}
-
-To allow our expression for unfolding user-defined functions, we have added to
-the translation function and environment with all the verification function
-definitions of the \verb|module|, and new a case for it:
-
-\begin{lstlisting}[language=elixir,numbers=none,frame=none]
-def translate_l2_exp(
-  user_defined, 
-  {:unfold, _, [{f, _, args}]}
-) do
-  defs = user_defined[{f, length(args)}]
-
-  translate(
-    user_defined,
-    {:case, [], [quote(do: {unquote_splicing(args)}), [do:
-      List.flatten(
-        for d <- defs do
-          quote do
-            {unquote_splicing(d.args)}
-            when unquote(d.pre) ->
-              res = unquote(
-                  remove_verification(d.body)
-                )
-
-              ghost do
-                assume res === unquote(f)(
-                    unquote_splicing(args)
-                  )
-
-                assume unquote(d.post)
-              end
-          end
-        end
-      )
-    ]]}
-  )
-end
-\end{lstlisting} 
