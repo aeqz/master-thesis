@@ -1,7 +1,7 @@
 \chapter{Introduction}
 \label{cap:introduction}
 
-In this chapter, we introduce the motivation and general idea of the project
+In this chapter we introduce the motivation and general idea of the project
 addressed in this document, define its scope in the form of goals and non-goals,
 and also how it is going to be approached.
 
@@ -19,11 +19,11 @@ can extend it with metaprogramming via macro expressions that are expanded at
 compile time.
 
 At the highest level, our idea is to provide macros to annotate Elixir code with
-ghost (i.e. verification-related), and to specify functions in the form of
-preconditions and postconditions within a module. These annotations would be
-removed before compiling the code of the functions into bytecode and, once all
-of them had been collected, a verification process would verify them also at
-compile-time as illustrated by Figure \ref{fig:diag}.
+ghost (i.e. verification-related annotations), and to specify functions in the
+form of preconditions and postconditions within a module. These annotations
+would be removed before compiling the code of the functions into bytecode and,
+once all of them had been collected, a verification process would verify them
+also at compile-time as illustrated by Figure \ref{fig:diag}.
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{Images/Vectorial/Diagram}
@@ -66,8 +66,8 @@ check_sat
 \end{lstlisting}
 
 Another sub-goal is to develop a verification \gls{ir} to express Elixir terms
-and its dynamically typed nature with simple constructs for its verification,
-also like in the following example:
+and their dynamically typed nature with simple constructs for verification, also
+like in the following example:
 
 \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 havoc x
@@ -120,18 +120,17 @@ to start with. Some non supported features are for example exceptions,
 higher-order functions and the Elixir \verb|pin| operator.
 
 Also, we are going to deal only with partial verification for the moment and not
-to verify or reason about termination. Nevertheless, we will discuss some ideas 
-regarding it when introducing user-defined verification functions and how the 
-system allows to unfold their invocations.  
-
-We also mention these topics in Chapter \ref{cap:conclusions}, which shows the 
-conclusions of this project and future work.
+with termination. Nevertheless, we will discuss some ideas regarding the latter
+when introducing user-defined verification functions and how the system allows
+to unfold their invocations. We also mention these topics in Chapter
+\ref{cap:conclusions}, which shows the conclusions of this project and future
+work.
 
 \section{Work plan}
 
-As a work plan, we will follow the sub-goals in the same order in which we have
-mentioned them, preceded by a training period for acquiring the required
-knowledge and practice with the Elixir programming language.
+As a work plan, we will address the sub-goals as follows, preceded by a training
+period for acquiring the required knowledge and practice with the Elixir
+programming language.
 
 Chapter \ref{cap:stateOfTheArt} shows the current research, tools and techniques
 related to our project, and Chapter \ref{cap:preliminaries} introduces the

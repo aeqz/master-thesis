@@ -3,7 +3,7 @@
 
 \chapterquote{This process of using tools you built yesterday to help build bigger tools today is called abstraction, and it is the most powerful force I know of in the universe}{Sandy Maguire}
 
-In this chapter, we develop a verification \gls{ir} that is intended to be 
+In this chapter we develop a verification \gls{ir} that is intended to be 
 particularly suitable for languages like Elixir. It consists of a representation
 whose expressions correspond to Elixir expressions that are dynamically typed
 and, for that, all of them will have the same sort, namely $\Term$.
@@ -60,7 +60,7 @@ built-in into the system in order to model the Elixir semantics.
 
 \section{Semantics}
 
-In this section, we show how the most relevant function specifications to model
+In this section we show how the most relevant function specifications to model
 the Elixir semantics are built-in into the system, and also the translation
 process from L1 statements and expressions into L0 expressions. 
 
@@ -390,7 +390,7 @@ translated term components:
 \end{array}
 \]
 
-For example, this would be the translation of the tuple $\{2, x\}$:
+For example, is the translation of the tuple $\{2, x\}$:
 
 \[
 \begin{array}{l}
@@ -436,7 +436,7 @@ does not require the second argument for the list constructor to be a list:
 \label{fig:listtr}
 \end{figure}
 
-For example, this would be the translation of the list $[2, x]$:
+For example, this is the translation of the list $[2, x]$:
 
 \[
 \begin{array}{l}
@@ -683,7 +683,7 @@ experiments within our implementation.
 \section{Implementation}
 \label{ir:l1implementation}
 
-In this section, we present our implementation for the L1 verification \gls{ir}
+In this section we present our implementation for the L1 verification \gls{ir}
 in Elixir.
 
 \subsection{Overview}
