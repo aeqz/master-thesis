@@ -3,6 +3,16 @@
 
 \chapterquote{That's just how it is: when you get over one milestone, there's another, bigger one}{Allan Holdsworth}
 
+We have developed a framework for Elixir code verification across several areas.
+First, with the integration of \acrshort{smt} solvers compliant with the SMT-LIB
+standard in Elixir. Second, with a verification \gls{ir} suitable to express
+Elixir terms, their dynamically typed nature and some ad-hoc operator behaviors
+such as the short-circuit evaluation of the strict logical connectives
+\verb|and| and \verb|or|. Finally, with a formal language that corresponds to 
+Elixir code with ghost verification expressions that is translated into our
+\gls{ir}, and an early implementation for offering all of this within a simple 
+Elixir \gls{api}.
+
 Although we delimited the scope of this project at the beginning, it has ended
 up being broader than we thought, and we have left several improvement tasks on
 the way.
@@ -11,24 +21,26 @@ Regarding the \acrshort{smt} solver integration for Elixir, it can be extended
 to support more of the SMT-LIB standard and to offer more out-of-the-box solver 
 support apart from Z3. It would be also interesting to define the small step 
 operational semantics of the L0 language and its correspondence with the big
-step ones in order to better study its implementation.
+step one in order to better study its implementation.
 
 The built-in specifications and types for our verification \gls{ir} to model the
-Elixir semantics can be extended by adding support to more of the built-in
+Elixir semantics can be extended by adding support for more of the built-in
 Elixir value types and functions, even by adding new L1 expressions and
 statements to support features that could not be modelled with the current
-syntax. Also, questions can arise regarding how well our model adheres to the
-Elixir semantics.
+syntax, for example, higher-order functions. Also, questions can arise regarding
+how well our model adheres to the Elixir semantics, for which having a
+definition of the Elixir operational semantics would be required.
 
-Besides, the L2 language can also be extended to support more of the Elixir
-language subset and more verification features. The unfolding of user
+Besides, the L2 language can also be extended to support more features of the Elixir
+language such as exceptions and the Elixir \verb|pin| operator, and more verification features. The unfolding of user
 definitions is still under experimentation and the resulting tool in general is
 in an early minimal stage.
 
 As we have mentioned, regarding the non-goals of this project, it would be
 interesting to extend the ideas behind it to also verify concurrent Elixir
-constructs such as \verb|send| and \verb|receive| and, prior to that, to achieve
-total verification by taking termination into account.
+constructs such as \verb|send| and \verb|receive|, which would not be a small
+endeavor at all, and, prior to that, to achieve total verification by taking
+termination into account.
 
 It has been pleasant to implement our ideas in a high-level programming language
 such as Elixir, whose functional programming principles allowed us to write code
