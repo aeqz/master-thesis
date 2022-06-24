@@ -396,7 +396,7 @@ translated term components:
 \end{array}
 \]
 
-For example, is the translation of the tuple $\{2, x\}$:
+For example, this is the translation of the tuple $\{2, x\}$:
 
 \[
 \begin{array}{l}
@@ -417,7 +417,8 @@ For example, is the translation of the tuple $\{2, x\}$:
 The translation for lists is defined recursively, with the empty list as the
 base case, as shown in Figure \ref{fig:listtr}. The generated L0 expressions
 define the corresponding heads and tails for the generated list terms, and it
-does not require the second argument for the list constructor to be a list:
+does not require the second argument for the list constructor to be a list. For
+example, this is the translation of the list $[2, x]$:
 
 \begin{figure}
 \[
@@ -441,8 +442,6 @@ does not require the second argument for the list constructor to be a list:
 \caption{Translation of L1 list expressions into L0}
 \label{fig:listtr}
 \end{figure}
-
-For example, this is the translation of the list $[2, x]$:
 
 \[
 \begin{array}{l}
@@ -468,7 +467,9 @@ corresponding to each argument $e_i$, and its corresponding uninterpreted term
 $t_i$. Then, we check that at least one preconditions holds and, finally, for
 each pre/postcondition pair of the specification of the function being applied,
 we generate code that checks whether the precondition holds and, in case it
-does, we assert both the precondition and postcondition.
+does, we assert both the precondition and postcondition. An example with the 
+translation of the function application $2 > x$ is shown in Figure
+\ref{fig:exaptr}.
 
 \begin{figure}
 \[
@@ -495,6 +496,36 @@ does, we assert both the precondition and postcondition.
 \]
 \caption{Translation of L1 function application expressions into L0}
 \label{fig:functr}
+\end{figure}
+
+\begin{figure}
+\[
+\begin{array}{l}
+\trExp{\gamma}{2 > x} \equiv (\epsilon, \widehat{>}(\mathit{integer\mbox{-}lit}(2),\hat{x}))\\
+\qquad \textbf{where } \epsilon = \left[ 
+\begin{array}{l}
+\addE~\mathit{is\mbox{-}integer}(\mathit{integer\mbox{-}lit}(2));\\
+\addE~\mathit{integer\mbox{-}value}(\mathit{integer\mbox{-}lit}(2)) = 2;\\
+\whenUnsatW\\
+\quad\gamma;\\
+\quad\addE~\neg(\mathit{is\mbox{-}integer}(\mathit{integer\mbox{-}lit}(2)) \wedge \mathit{is\mbox{-}integer}(\hat{x}))\\
+\doW~\skipE\\
+\elseW~\failE;\\
+\whenUnsatW\\
+\quad\gamma;\\
+\quad\addE~\neg(\mathit{is\mbox{-}integer}(\mathit{integer\mbox{-}lit}(2)) \wedge \mathit{is\mbox{-}integer}(\hat{x}))\\
+\doW\\
+\quad\addE~\mathit{is\mbox{-}integer}(\mathit{integer\mbox{-}lit}(2)) \wedge \mathit{is\mbox{-}integer}(\hat{x});\\
+\quad\addE~\mathit{is\mbox{-}boolean}(\widehat{>}(\mathit{integer\mbox{-}lit}(2),\hat{x})) \wedge \\ 
+\quad\quad\mathit{boolean\mbox{-}value}(\widehat{>}(\mathit{integer\mbox{-}lit}(2),\hat{x})) \Leftrightarrow \\
+\quad\quad\quad\mathit{integer\mbox{-}value}(\mathit{integer\mbox{-}lit}(2)) > \mathit{integer\mbox{-}value}(\hat{x})\\
+\elseW~\skipE\\
+\end{array}
+\right]
+\end{array}
+\]
+\caption{Example with the translation of $2 > 1$ into L0}
+\label{fig:exaptr}
 \end{figure}
 
 We distinguish the cases of logical connectives from function application

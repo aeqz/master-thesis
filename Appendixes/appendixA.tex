@@ -39,6 +39,7 @@ with_local_conn do
   end
 
   
+
   # This comprehension stands for pairs of 
   # variables corresponding to different nodes 
   # at the same position
@@ -65,18 +66,16 @@ with_local_conn do
   for n <- nodes do
     # This reduce generates a disjunction with 
     # all the positions of the node
-    assert unquote(
-             Enum.reduce(
-               Enum.with_index(nodes),
-               quote(do: false),
-               fn {_, i}, acc ->
-                 quote do
-                   unquote(acc) ||
-                     unquote(node_in_position[{n, i}])
-                 end
-               end
-             )
-           )
+    assert unquote(Enum.reduce(
+            Enum.with_index(nodes),
+              quote(do: false),
+              fn {_, i}, acc ->
+                quote do
+                  unquote(acc) ||
+                    unquote(node_in_position[{n, i}])
+                end
+              end
+            ))
   end
 
   check_sat
@@ -93,4 +92,4 @@ And, for the given problem input, its evaluation prints
 \end{lstlisting}
 
 meaning that there exists an assignment for the defined variables that satisfies
-the specified formulas, thus the graph has a Hamiltonian path.
+the specified formulas, thus the input graph has a Hamiltonian path.
