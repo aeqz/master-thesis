@@ -32,7 +32,7 @@ currently being developed with the support of Amazon.
 The following is an example to specify and verify the implementation of a
 function to return the maximum of three integer numbers:
 
-\begin{verbatim}
+\begin{lstlisting}[language=dafny,numbers=none,frame=none]
 method max3(x: int, y: int, z: int) returns (m: int)
   ensures m == x || m == y || m == z
   ensures m >= x && m >= y && m >= z
@@ -41,7 +41,7 @@ method max3(x: int, y: int, z: int) returns (m: int)
   if y > z { return y; }
   return z;
 }
-\end{verbatim}
+\end{lstlisting}
 
 Although the above example may seem simple, Dafny can also handle more advanced
 topics such as recursion and loops by means of induction and loop invariants

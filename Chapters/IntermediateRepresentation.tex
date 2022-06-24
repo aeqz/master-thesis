@@ -8,10 +8,10 @@ particularly suitable for languages like Elixir. It consists of a representation
 whose expressions correspond to Elixir expressions that are dynamically typed
 and, for that, all of them will have the same sort, namely $\Term$.
 
-We start by providing its formal syntax, the built-in prelude that we have
-defined for modelling the Elixir semantics, and its translation into L0
-expressions.  Then, we show some examples with our current implementation and
-give an overview of its details.
+We start by providing the formal syntax of our \gls{ir}, the built-in prelude
+that we have defined for modelling the Elixir semantics, and its translation
+into L0 expressions.  Then, we show some examples with our current
+implementation and give an overview of its details.
 
 \section{Syntax}
 
@@ -23,8 +23,10 @@ $\widehat{f}$. If $f$ has arity $n$, its corresponding function symbol
 $\widehat{f}$ will have sort $\Term \times \stackrel{n}{\dots} \times \Term
 \rightarrow \Term$.
 
-Let us define the syntax of L1 expressions and statements:
+Let us define the syntax of L1 expressions and statements in Figure
+\ref{fig:l1syn}.
 
+\begin{figure}
 \[
 \begin{array}{rcll}
 \Exp{1} \ni e & ::= & c & \{ \textrm{literal} \}\\
@@ -46,6 +48,9 @@ Let us define the syntax of L1 expressions and statements:
  & | & \unfoldE~f(e_1, \dots, e_n) & \{ \textrm{definition unfolding} \}\\
 \end{array}
 \]
+\caption{Syntax of L1 expressions and statements}
+\label{fig:l1syn}
+\end{figure}
 
 We also assume that for every function symbol $f \in \Sigma^{1}$ of arity $n$
 there is an overloaded specification expressed in terms of L0 formulae. Here the
@@ -137,7 +142,8 @@ values:
 (declare-fun boolean_lit (Bool) Term)
 \end{verbatim}
 
-In the case of boolean connectives and nonempty lists, their value constructors:
+In the case of boolean connectives and nonempty lists, their value constructors
+are defined as follows:
 
 \begin{verbatim}
 (declare-fun term_and (Term Term) Term)
@@ -432,7 +438,7 @@ does not require the second argument for the list constructor to be a list:
   \right]
 \end{array}
 \]
-\caption{Translation of the list L1 expressions into L0}
+\caption{Translation of L1 list expressions into L0}
 \label{fig:listtr}
 \end{figure}
 
@@ -445,12 +451,12 @@ For example, this is the translation of the list $[2, x]$:
 \begin{array}{l}
 \addE~\mathit{is\mbox{-}integer}(\mathit{integer\mbox{-}lit}(2));\\
 \addE~\mathit{integer\mbox{-}value}(\mathit{integer\mbox{-}lit}(2)) = 2;\\
-\addE~\isnelist{\mathit{cons}(\hat{x}, \mathit(nil))};\\
-\addE~\mathit{hd}(\mathit{cons}(\hat{x}, \mathit(nil))) = \hat{x};\\
-\addE~\mathit{tl}(\mathit{cons}(\hat{x}, \mathit(nil))) = \mathit{nil};\\
+\addE~\isnelist{\mathit{cons}(\hat{x}, \mathit{nil})};\\
+\addE~\mathit{hd}(\mathit{cons}(\hat{x}, \mathit{nil})) = \hat{x};\\
+\addE~\mathit{tl}(\mathit{cons}(\hat{x}, \mathit{nil})) = \mathit{nil};\\
 \addE~\isnelist{\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))};\\
 \addE~\mathit{hd}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = 2;\\
-\addE~\mathit{tl}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = \mathit{cons}(\hat{x}, \mathit(nil));\\
+\addE~\mathit{tl}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = \mathit{cons}(\hat{x}, \mathit{nil});\\
 \end{array}
 \right]
 \end{array}
@@ -487,7 +493,7 @@ does, we assert both the precondition and postcondition.
 \right] \\
 \end{array}
 \]
-\caption{Translation of the function application L1 expression into L0}
+\caption{Translation of L1 function application expressions into L0}
 \label{fig:functr}
 \end{figure}
 
@@ -526,7 +532,7 @@ translations are in Figures \ref{fig:andtr} and \ref{fig:ortr}.
 \right] \\
 \end{array}
 \]
-\caption{Translation of the $\mathbf{and}$ L1 expression into L0}
+\caption{Translation of L1 $\mathbf{and}$ expressions into L0}
 \label{fig:andtr}
 \end{figure}
 
@@ -571,7 +577,7 @@ underlying logical conjunction.
 \right] \\
 \end{array}
 \]
-\caption{Translation of the $\mathbf{or}$ L1 expression into L0}
+\caption{Translation of L1 $\mathbf{or}$ expressions into L0}
 \label{fig:ortr}
 \end{figure}
 
@@ -649,7 +655,7 @@ pre/postcondition pair specification also as parameterized L1 expressions.
 \right] \\
 \end{array}
 \]
-\caption{Translation of the $\mathbf{unfold}$ L1 statement into L0}
+\caption{Translation of L1 $\mathbf{unfold}$ statements into L0}
 \label{fig:unfoldtr}
 \end{figure}
 

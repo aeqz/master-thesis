@@ -342,12 +342,32 @@
       for,if,import,defmodule,defprotocol,%
       nil,defmacrop,defoverridable,defimpl,%
       super,fn,raise,true,try,end,with,%
-      unless},
-  otherkeywords={<-,->, |>, \%\{, \}, \{, \}, \, (, )},
+      unless,defv,defparsec},
+  otherkeywords={<-,->, |>, \%\{, \}, \{, \}, \, (, ), [, ], |, ::},
+  morekeywords={Bool,Term,Int}
+  keywordstyle = [2]{\color{frenchplum}},
+  morekeywords=[2]{push,pop,declare_sort,declare_fun,assert,assume,havoc,%
+      declare_const,check_sat,declare,when_unsat,add,fail,local,%
+      @verifier,and,or,not,requires,ensures,@spec,@type},
   sensitive=true,
   morecomment=[l]{\#},
   morecomment=[n]{/*}{*/},
-  morecomment=[s][\color{purple}]{:}{\ },
+  morecomment=[l][\color{purple}]{**\ (},
+  morestring=[s][\color{orange}]"",
+  commentstyle=\color{commentgreen},
+  keywordstyle=\color{eminence},
+  stringstyle=\color{red},
+  basicstyle=\ttfamily,
+  breaklines,
+  showstringspaces=false,
+  frame=tb
+}
+
+\lstdefinelanguage{dafny}{
+  morekeywords={method,returns,ensures,return, int, if},
+  sensitive=true,
+  morecomment=[l]{\#},
+  morecomment=[n]{/*}{*/},
   morestring=[s][\color{orange}]"",
   commentstyle=\color{commentgreen},
   keywordstyle=\color{eminence},
