@@ -547,11 +547,9 @@ translations are in Figures \ref{fig:andtr} and \ref{fig:ortr}.
 \quad\whenUnsatW~\gamma;\addE~\booleanvalue{t_1}~\doW\\
 \quad\quad\addE~\isboolean{t};\\
 \quad\quad\addE~\neg\booleanvalue{t};\\
-\quad\quad\addE~\neg\booleanvalue{t_1}\\
 \quad\elseW\\
 \quad\quad\epsilon_2;\\
 \quad\quad\whenUnsatW~\gamma;\addE~\neg\booleanvalue{t_1}~\doW\\
-\quad\quad\quad\addE~\booleanvalue{t_1}\\
 \quad\quad\quad\addE~t = t_2\\
 \quad\quad\elseW~\whenUnsatW~\gamma';\addE~\neg\isboolean{t_2}~\doW\\
 \quad\quad\quad\addE~\isboolean{t};\\
@@ -592,11 +590,9 @@ underlying logical conjunction.
 \quad\whenUnsatW~\gamma;\addE~\neg\booleanvalue{t_1}~\doW\\
 \quad\quad\addE~\isboolean{t};\\
 \quad\quad\addE~\booleanvalue{t};\\
-\quad\quad\addE~\booleanvalue{t_1}\\
 \quad\elseW\\
 \quad\quad\epsilon_2;\\
 \quad\quad\whenUnsatW~\gamma;\addE~\booleanvalue{t_1}~\doW\\
-\quad\quad\quad\addE~\neg\booleanvalue{t_1}\\
 \quad\quad\quad\addE~t = t_2\\
 \quad\quad\elseW~\whenUnsatW~\gamma';\addE~\neg\isboolean{t_2}~\doW\\
 \quad\quad\quad\addE~\isboolean{t};\\
