@@ -207,8 +207,9 @@ branch and for each translation of the resulting expression of that branch:
 \quad\quad\textbf{or}~(\andE{e_{n,j}}{(\orE{(\textbf{not}~e_j~\texttt{===}~P_n)}{f_n})}); \\
 \assumeE~(\textbf{not}~(e_{1,j}~\textbf{and}~(\orE{(\textbf{not}~e_j~\texttt{===}~P_1)}{f_1})))~\textbf{and}~\cdots\\
 \quad\quad\textbf{and}~(\textbf{not}~(e_{i-1,j}~\textbf{and}~(\orE{(\textbf{not}~e_j~\texttt{===}~P_{i - 1})}{f_{i - 1}}))); \\
-\assumeE~e_j~\texttt{===}~P_i; \\
-\assumeE~e_{i,j}~\textbf{and}~f_{i};\\
+\assumeE~e_{i,j};\\
+\assumeE~e_j~\texttt{===}~P_i;\\
+\assumeE~f_{i};\\
 S_{i,k}', e_{i,k}')
 \end{array}  \middle\vert
 \begin{array}{l}
