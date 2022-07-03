@@ -1,0 +1,478 @@
+\documentclass{beamer}
+
+\usepackage[utf8]{inputenc} 
+\usepackage[english]{babel}
+\usepackage[acronyms]{glossaries}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{stmaryrd}
+\usepackage{bussproofs}
+\usepackage{appendixnumberbeamer}
+\usetheme[progressbar=frametitle]{metropolis}
+
+\include{definitions}
+
+\titlegraphic{%
+  \begin{flushright}
+  \includegraphics[height=3.5cm]{Images/Bitmap/escudoUCMcolor.png}
+  \end{flushright}
+}
+
+\makeatletter
+\setbeamertemplate{title page}{
+  \begin{minipage}[b][\paperheight]{\textwidth}
+    \vfill%
+    \ifx\inserttitle\@empty\else\usebeamertemplate*{title}\fi
+    \ifx\insertsubtitle\@empty\else\usebeamertemplate*{subtitle}\fi
+    \usebeamertemplate*{title separator}
+    \ifx\beamer@shortauthor\@empty\else\usebeamertemplate*{author}\fi
+    \ifx\insertdate\@empty\else\usebeamertemplate*{date}\fi
+    \ifx\insertinstitute\@empty\else\usebeamertemplate*{institute}\fi
+    \vspace*{-2.5cm}
+    \ifx\inserttitlegraphic\@empty\else\inserttitlegraphic\fi
+    \vspace*{1cm}
+  \end{minipage}
+}
+\makeatother
+
+\title{\titulo}
+\subtitle{Master's Degree in Formal Methods and Computer Engineering}
+\date{\today}
+\author{\autor \\ Supervisor: Manuel Montenegro Montes}
+\institute{Complutense University of Madrid}
+\begin{document}
+  \maketitle
+  \begin{frame}
+    \frametitle{Table of Contents}
+    \tableofcontents
+  \end{frame}
+  \section{Introduction}
+  \begin{frame}{Motivation}
+    Light-weight program verification (trying to make it friendly)
+  \end{frame}
+  \begin{frame}{Motivation}
+    Dafny: overview, verification IR (Boogie), SMT solver (Z3)
+  \end{frame}
+  \begin{frame}{Our aim}
+    Provide a similar system but specialized for Elixir
+    and implemented in Elixir
+
+    \includegraphics[width=\textwidth]{Images/Vectorial/Diagram.pdf}
+
+    Comment Elixir: dynamically typed, functional, DSLs, current verif. 
+    approaches...
+
+    Only a subset of sequential Elixir for the moment, and partial verification
+    (no concurrency and no termination)
+  \end{frame}
+  \begin{frame}{Plan}
+    SMT solver integration (binding)
+
+    L0 (closer to SMT solver)
+
+    L1 (verification IR)
+
+    L2 (Elixir + ghost code)
+  \end{frame}
+  \section{SMT Solver Integration}
+  \begin{frame}{Elixir SMT-LIB binding}
+    We have developed an SMT-LIB binding for Elixir with the following features:
+
+    \begin{itemize}
+      \item An SMT-LIB (subset) \gls*{dsl}
+      \item Different \acrshort*{smt} solvers can be easily integrated
+      \item Out-of-the-box support for Z3
+    \end{itemize}
+  \end{frame}
+  \begin{frame}[fragile]{Elixir SMT-LIB binding example}
+    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+import SmtLib
+
+with_local_conn do
+  declare_const x: Int,
+                y: Int
+
+  assert !(
+      (:x + 3 <= :y + 3) ~> (:x <= :y)
+    )
+
+  check_sat
+end
+      \end{lstlisting}
+  \end{frame}
+  \begin{frame}{The L0 language}
+    \begin{itemize}
+      \item The lowest level language of our verification stack
+      \item Closer to the \acrshort*{smt} solver
+      \item Restricted SMT-LIB + control flow + failure
+    \end{itemize}
+  \end{frame}
+  \begin{frame}{L0 expressions syntax}
+    \[
+      \begin{array}{rcll}
+        \Exp{0} \ni \epsilon & ::= & \skipE \\
+        & | & \failE \\
+        & | & \epsilon_1;\epsilon_2 \\
+        & | & \localE~\epsilon \\
+        & | & \addE~\varphi \\
+        & | & \declareE{x} \\
+        & | & \whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3} \\
+      \end{array}
+    \]
+
+    where $x \in V$ is a variable name and $\varphi \in \mathbb{F}$ is a 
+    formula with many-sorted terms $t \in \mathbb{T}$
+  \end{frame}
+  \begin{frame}{L0 big-step operational semantics}
+    Notation:
+    \begin{itemize}
+      \item $X \subseteq V$ set of variable names
+      \item $\Phi \subseteq \mathbb{F}$ set of formulas
+      \item $\mathbb{F}(X)$ subset of $\mathbb{F}$ with free variables in $X$
+      \item $(X, \Phi)$ SMT solver state
+      \item $\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$ judgement
+    \end{itemize}
+  \end{frame}
+  \begin{frame}{L0 big-step operational semantics}
+    \begin{prooftree}
+      \AxiomC{ }
+      \UnaryInfC{$\BS{\skipE}{X}{\Phi}{(X, \Phi)}$}
+    \end{prooftree}
+    
+    \begin{prooftree}
+      \AxiomC{$\varphi \in \mathbb{F}(X)$}
+      \UnaryInfC{$\BS{\addE~\varphi}{X}{\Phi}{(X, \Phi \cup \{\varphi\})}$}
+    \end{prooftree}
+
+    \begin{prooftree}
+      \AxiomC{$x \notin X$}
+      \UnaryInfC{$\BS{\declareE{x}}{X}{\Phi}{(X \cup \{x\}, \Phi)}$}
+    \end{prooftree}
+    
+    \medskip
+    
+    \begin{prooftree}
+      \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
+      \AxiomC{$\BS{\epsilon_2}{X'}{\Phi'}{(X'', \Phi'')}$}
+      \BinaryInfC{$\BS{\epsilon_1;\epsilon_2}{X}{\Phi}{(X'', \Phi'')}$}
+    \end{prooftree}
+  \end{frame}
+  \begin{frame}{L0 big-step operational semantics}
+    \begin{prooftree}
+      \AxiomC{$\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$}
+      \UnaryInfC{$\BS{\localE~\epsilon}{X}{\Phi}{(X, \Phi)}$}
+    \end{prooftree}
+
+    \medskip
+
+    \begin{prooftree}
+      \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
+      \AxiomC{$\unsat{\Phi'}$}
+      \AxiomC{$\BS{\epsilon_2}{X}{\Phi}{(X'', \Phi'')}$}
+      \TrinaryInfC{$\BS{\whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3}}{X}{\Phi}{(X'', \Phi'')}$}
+    \end{prooftree}
+    
+    \medskip
+    
+    \begin{prooftree}
+      \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
+      \AxiomC{$\neg\unsat{\Phi'}$}
+      \AxiomC{$\BS{\epsilon_3}{X}{\Phi}{(X'', \Phi'')}$}
+      \TrinaryInfC{$\BS{\whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3}}{X}{\Phi}{(X'', \Phi'')}$}
+    \end{prooftree}
+  \end{frame}
+  \begin{frame}[fragile]{L0 Elixir implementation}
+    A simple implementation in Elixir is straightforward by using our SMT-LIB binding
+
+    \bigskip
+
+    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+defmacro eval(conn, {:local, _, [e]}) do
+  quote do
+    conn = unquote(conn)
+    :ok = push conn
+    eval conn, unquote(e)
+    :ok = pop conn
+  end
+end
+    \end{lstlisting}
+  \end{frame}
+  \begin{frame}[fragile]{L0 Elixir example}
+    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+eval conn do
+  declare_const :x
+
+  when_unsat add :x != :x do
+    skip # Does not reach fail
+  else
+    fail
+  end
+end
+    \end{lstlisting}
+  \end{frame}
+  \begin{frame}[fragile]{L0 Elixir example}
+    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+eval conn do
+  declare_const :x
+
+  when_unsat add :x == :x do
+    skip
+  else
+    fail # Reaches fail
+  end
+end
+    \end{lstlisting}
+  \end{frame}
+  \section{Verification Intermediate Representation}
+  \begin{frame}{The L1 language}
+    \begin{itemize}
+      \item Verification \gls*{ir} 
+      \item It models Elixir expressions dynamically typed
+      \item Statements for writing verification code
+    \end{itemize}
+  \end{frame}
+  \begin{frame}{L1 expressions syntax}
+    \[
+      \begin{array}{rcll}
+        \Exp{1} \ni e & ::= & c \\
+        & | & x \\
+        & | & \andE{e_1}{e_2} \\
+        & | & \orE{e_1}{e_2} \\
+        & | & [] \\
+        & | & [e_1~|~e_2] \\
+        & | & \{e_1, \ldots, e_n\} \\
+        & | & f(e_1, \ldots, e_n) \\
+      \end{array}
+    \]
+
+    where $c$ is a constant literal of a simple type, currently integer or 
+    boolean, and $f \in \Sigma^1$ a function name
+  \end{frame}
+  \begin{frame}{L1 statements syntax}
+    \[
+      \begin{array}{rcll}
+        \Stm \ni S & ::= & \skipE \\
+        & | & \blockE~S \\
+        & | & \havocE~x \\
+        & | & S_1;S_2 \\
+        & | & \assumeE~e \\
+        & | & \assertE~e \\
+        & | & \unfoldE~f(e_1, \dots, e_n) \\
+      \end{array}
+    \]
+  \end{frame}
+  \begin{frame}[fragile]{Built-in SMT-LIB declarations}
+    Foundation to represent L1 expressions in the underlying many-sorted logic
+    \begin{verbatim}
+(declare-sort Term 0)
+(declare-sort Type 0)
+...
+(declare-const int Type)
+(declare-const bool Type)
+(assert (distinct int bool))
+...
+(declare-fun type (Term) Type)
+(define-fun is_integer ((x Term)) Bool 
+  (= (type x) int)
+)
+...
+    \end{verbatim}
+  \end{frame}
+  \begin{frame}{Built-in L1 specifications}
+    Built-in \textbf{sets} of pair/postconditions for functions to 
+    model their behavior in Elixir
+    
+    \[
+      \begin{array}{l}
+      \{ \isinteger{x} \wedge \isinteger{y} \}\\
+      x~\texttt{+}~y\\
+      \{ \\ 
+      \quad\isinteger{\widehat{+}(x, y)} \wedge \\
+      \quad\integervalue{\widehat{+}(x, y)} = \integervalue{x} + \integervalue{y} \\
+      \}
+      \end{array}
+    \]
+
+    There could be more for other types (e.g. float)
+  \end{frame}
+  \begin{frame}{Translation from L1 into L0}
+    \[
+      \begin{array}{ll}
+        \trExp{\_}{\_} : & \Exp{0} \times \Exp{1} \rightarrow \Exp{0} \times \mathbb{T}\\
+        \trStm{\_} : & \Stm \rightarrow \Exp{0}
+      \end{array}
+    \]
+
+    $\trExp{\gamma}{e}$ returns a tuple $(\epsilon, t)$:
+    \begin{itemize}
+      \item $\epsilon$, an L0 expression that models the semantics of $e$
+      \item $t$, a term in the underlying logic to refer to the result of $e$
+      \item $\gamma$ models known facts by the time $e$ is evaluated
+    \end{itemize}
+  \end{frame}
+  \begin{frame}{Translation of L1 lists}
+    \[
+      \begin{array}{l}
+      \trExp{\_}{[]} \equiv (
+        \skipE, \mathit{nil}
+      )\\
+      \trExp{\gamma}{[e_1~|~e_2]} \equiv (\epsilon_1;\epsilon_2;\epsilon, t)\\
+        \qquad \textbf{where } (\epsilon_1, t_1) = \trExp{\gamma}{e_1}\\ 
+        \qquad \phantom{\textbf{where }} (\epsilon_2, t_2) = \trExp{\gamma}{e_2}\\ 
+        \qquad \phantom{\textbf{where }} t = \mathit{cons}(t_1, t_2)\\ 
+        \qquad \phantom{\textbf{where }} \epsilon = \left[
+          \begin{array}{l}
+            \addE~\isnelist{t};\\
+            \addE~\mathit{hd}(t) = t_1;\\
+            \addE~\mathit{tl}(t) = t_2\\
+          \end{array}
+        \right]
+      \end{array}
+    \]
+  \end{frame}
+  \begin{frame}{Translation of L1 lists example}
+    \[
+      \begin{array}{l}
+      \trExp{\gamma}{[2, x]} \equiv (\epsilon, \mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil})))\\
+      \qquad \textbf{where } \epsilon = \left[ 
+      \begin{array}{l}
+      \addE~\mathit{is\mbox{-}integer}(\mathit{integer\mbox{-}lit}(2));\\
+      \addE~\mathit{integer\mbox{-}value}(\mathit{integer\mbox{-}lit}(2)) = 2;\\
+      \addE~\isnelist{\mathit{cons}(\hat{x}, \mathit{nil})};\\
+      \addE~\mathit{hd}(\mathit{cons}(\hat{x}, \mathit{nil})) = \hat{x};\\
+      \addE~\mathit{tl}(\mathit{cons}(\hat{x}, \mathit{nil})) = \mathit{nil};\\
+      \addE~\isnelist{\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))};\\
+      \addE~\mathit{hd}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = 2;\\
+      \addE~\mathit{tl}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = \mathit{cons}(\hat{x}, \mathit{nil});\\
+      \end{array}
+      \right]
+      \end{array}
+    \]
+  \end{frame}
+  \begin{frame}[fragile]{L1 Elixir implementation}
+    Our implementation is quite direct from the formalization
+    \small
+    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+def tr_exp(_, [{:|, _, [h, t]}]) do
+  {h, h_sem} = tr_exp(_, h)
+  {y, t_sem} = tr_exp(_, t)
+  t = 
+    quote(do: :cons.(unquote(h), unquote(t)))
+
+  { t, quote do
+    unquote(h_sem)
+    unquote(t_sem)
+    add :is_nonempty_list.(unquote(t))
+    add :hd.(unquote(t)) == unquote(h)
+    add :tl.(unquote(t)) == unquote(t)
+  end }
+end
+    \end{lstlisting}
+  \end{frame}
+  \begin{frame}[fragile]{L1 Elixir example}
+    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+import Boogiex
+
+with_local_env do
+  assert (false or 2) === 2
+  assert elem({1, 2, 3}, 0) === 1
+  assert true or true + true
+
+  havoc x
+  assert x === x
+  assert not (x !== x)
+end
+    \end{lstlisting}
+  \end{frame}
+  \section{Elixir Code Verification}
+  \begin{frame}{The L2 language}
+    \begin{itemize}
+      \item The highest level language of our verification stack
+      \item Elixir (subset) + ghost verification code
+    \end{itemize}
+  \end{frame}
+  \begin{frame}{L2 expressions syntax}
+    \[
+      \begin{array}{rcll}
+      \Exp{2} \ni E & ::= & e \\
+      & | & P = E \\
+      & | & \emptyE \\
+      & | & E_1; E_2 \\
+      & | & \caseE~E~\doW \\
+      & & \quad P_1~\whenE~f_1 \rightarrow E_1 \\
+      & & \quad \vdots\\
+      & & \quad P_n~\whenE~f_n \rightarrow E_n \\
+      & & \Wend \\
+      & | & \ghostE~\doW~S~\Wend \\
+      \end{array}
+    \]
+
+    where $P, P_1, \dots P_n$ are patterns:
+    \[
+      \Pat \ni P ::= c \mid x \mid [\:] \mid [P_1 \mid P_2] \mid \{ P_1, \ldots, P_n \}
+    \]
+  \end{frame}
+  \begin{frame}{Translation from L2 into L1}
+    \[
+      \begin{array}{ll}
+        \trEXP{\_} : \Exp{2} \rightarrow [\Stm \times \Exp{1}]\\
+        \trMatch{\_}{\_} : \Exp{1} \times \Pat \rightarrow \Exp{1}
+      \end{array}
+    \]
+
+    $\trEXP{E}$ generates a sequence of pairs $(S, e)$:
+    \begin{itemize}
+      \item $S$, the L1 statement that models the semantics of $E$
+      \item $e$, L1 expression that represents the result to which $E$ is evaluated
+      \item Each pair corresponds to an execution path
+    \end{itemize}
+  \end{frame}
+  \begin{frame}{Translation of L2 list patterns}
+    TODO
+  \end{frame}
+  \begin{frame}{Translation of L2 pattern matching expressions}
+    TODO
+  \end{frame}
+  \begin{frame}{Verifying user-defined functions}
+    TODO
+  \end{frame}
+  \begin{frame}[fragile]{L2 Elixir implementation}
+    Again, our implementation is quite direct from the formalization
+    \small
+    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+def tr_match({:|, _, [p1, p2]}, e) do
+  tr_1 = 
+    tr_match(p1, quote(do: hd(unquote(e))))
+  tr_2 = 
+    tr_match(p2, quote(do: tl(unquote(e))))
+
+  quote(do:
+    is_list(unquote(e)) and 
+    unquote(e) !== [] and
+    unquote(tr_1) and unquote(tr_2)
+  )
+end
+    \end{lstlisting}
+  \end{frame}
+  \begin{frame}[plain,c]{L2 Elixir example}
+    \begin{center}
+      \Huge Live demo
+    \end{center}
+  \end{frame}
+  \section{Conclusions}
+  \begin{frame}{Conclusions}
+    \begin{itemize}
+      \item We have developed a framework for Elixir code verification across several areas (\acrshort*{smt} solver integration, a verification \gls*{ir} and Elixir code verification)
+      \item Future work may address concurrency and termination
+      \item Also, we have left several improvements on the way
+      \begin{itemize}
+        \item More SMT-LIB and \acrshort*{smt} solvers support
+        \item Extend our \gls*{ir} to model more Elixir value types and built-in functions
+        \item Extend the Elixir subset to verify (e.g. pin operator and higher-order)
+        \item The final tool is in an early proof of concept stage
+      \end{itemize}
+    \end{itemize}
+  \end{frame}
+  \appendix
+  \maketitle
+\end{document}

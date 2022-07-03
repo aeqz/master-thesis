@@ -16,3 +16,6 @@
 *.out
 *.toc
 *.swp
+*.snm
+*.nav
+*.vrb

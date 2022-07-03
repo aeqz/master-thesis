@@ -5,16 +5,19 @@ A LaTeX project for a master's thesis in formal methods about Elixir code verifi
 ## Usage
 
 ```sh
-# Generate the PDF file
+# Generate the thesis PDF file
 make full
 
-# Refresh the PDF file after small changes
+# Refresh the thesis PDF file after small changes
 make fast
+
+# Generate the slides PDF file
+make slides
 
 # Remove the auxiliary files
 make clean
 
-# Clean and also remove the generated PDF file
+# Clean and also remove the generated PDF files
 make distclean
 ```
 
