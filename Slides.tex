@@ -1,4 +1,5 @@
 \documentclass{beamer}
+% \documentclass[handout]{beamer}
 
 \usepackage[utf8]{inputenc} 
 \usepackage[english]{babel}
@@ -48,43 +49,71 @@
   \end{frame}
   \section{Introduction}
   \begin{frame}{Motivation}
-    Light-weight program verification (trying to make it friendly)
+    \begin{itemize}
+      \item \pause Light-weight program verification systems:
+      \begin{itemize}
+        \item \pause Allow specifying and verifying code
+        \item \pause Reduce the required human intervention
+      \end{itemize}
+      \item \pause Dafny:
+      \begin{itemize}
+        \item \pause Specify code with pre/post conditions
+        \item \pause Compiled to Boogie, a verification \gls*{ir}
+        \item \pause Verification conditions discharged by the Z3 theorem prover
+        \item \pause Compiled also to other programming languages to be executed
+      \end{itemize}
+    \end{itemize}
   \end{frame}
-  \begin{frame}{Motivation}
-    Dafny: overview, verification IR (Boogie), SMT solver (Z3)
+  \begin{frame}{The Elixir programming language}
+    \begin{itemize}
+      \item \pause A functional programming language that runs on the Erlang Virtual Machine
+      \item \pause Dynamically typed
+      \item \pause Suitable for developing \gls*{dsl}s through macros
+      \item \pause Main current verification approaches:
+      \begin{itemize}
+        \item \pause Dialyzer (static)
+        \item \pause Property-based testing (dynamic)
+        \item \pause Both of them show the presence of errors rather than their absence
+      \end{itemize}
+    \end{itemize}
   \end{frame}
   \begin{frame}{Our aim}
-    Provide a similar system but specialized for Elixir
-    and implemented in Elixir
+    Provide a system similar to that of Dafny but specialized for Elixir
+    and implemented in Elixir itself
 
-    \includegraphics[width=\textwidth]{Images/Vectorial/Diagram.pdf}
+    \pause \bigskip
 
-    Comment Elixir: dynamically typed, functional, DSLs, current verif. 
-    approaches...
+    \begin{center}
+      \includegraphics[width=\textwidth]{Images/Vectorial/Diagram.pdf}
+      \url{https://github.com/adrianen-ucm/verixir-project}
+    \end{center}
+    
+    \pause \bigskip
 
-    Only a subset of sequential Elixir for the moment, and partial verification
-    (no concurrency and no termination)
+    Scope: only a subset of sequential Elixir for the moment, and partial 
+    verification (i.e. not verifying termination)
   \end{frame}
   \begin{frame}{Plan}
-    SMT solver integration (binding)
 
-    L0 (closer to SMT solver)
-
-    L1 (verification IR)
-
-    L2 (Elixir + ghost code)
+    \begin{enumerate}
+      \item \pause \acrshort*{smt} solver integration in Elixir
+      \item \pause L0, a low level language close to the \acrshort*{smt} solver
+      \item \pause L1, a verification \gls*{ir} for dynamically typed Elixir expressions
+      \item \pause L2, a high level language that models Elixir + verification code
+    \end{enumerate}
   \end{frame}
-  \section{SMT Solver Integration}
+  \section{SMT Solver Integration in Elixir}
   \begin{frame}{Elixir SMT-LIB binding}
     We have developed an SMT-LIB binding for Elixir with the following features:
 
     \begin{itemize}
-      \item An SMT-LIB (subset) \gls*{dsl}
-      \item Different \acrshort*{smt} solvers can be easily integrated
-      \item Out-of-the-box support for Z3
+      \item \pause An SMT-LIB (subset) \gls*{dsl}
+      \item \pause Different \acrshort*{smt} solvers can be easily integrated
+      \item \pause Out-of-the-box support for Z3
     \end{itemize}
   \end{frame}
   \begin{frame}[fragile]{Elixir SMT-LIB binding example}
+    \small
     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 import SmtLib
 
@@ -102,9 +131,9 @@ end
   \end{frame}
   \begin{frame}{The L0 language}
     \begin{itemize}
-      \item The lowest level language of our verification stack
-      \item Closer to the \acrshort*{smt} solver
-      \item Restricted SMT-LIB + control flow + failure
+      \item \pause The lowest level language of our verification stack
+      \item \pause Close to the \acrshort*{smt} solver
+      \item \pause Restricted SMT-LIB + control flow + failure
     \end{itemize}
   \end{frame}
   \begin{frame}{L0 expressions syntax}
@@ -120,36 +149,41 @@ end
       \end{array}
     \]
 
-    where $x \in V$ is a variable name and $\varphi \in \mathbb{F}$ is a 
+    \pause where $x \in V$ is a variable name and $\varphi \in \mathbb{F}$ is a 
     formula with many-sorted terms $t \in \mathbb{T}$
   \end{frame}
   \begin{frame}{L0 big-step operational semantics}
     Notation:
     \begin{itemize}
-      \item $X \subseteq V$ set of variable names
-      \item $\Phi \subseteq \mathbb{F}$ set of formulas
-      \item $\mathbb{F}(X)$ subset of $\mathbb{F}$ with free variables in $X$
-      \item $(X, \Phi)$ SMT solver state
-      \item $\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$ judgement
+      \item \pause $X \subseteq V$ set of variable names
+      \item \pause $\Phi \subseteq \mathbb{F}$ set of formulas
+      \item \pause $\mathbb{F}(X)$ subset of $\mathbb{F}$ with free variables in $X$
+      \item \pause $(X, \Phi)$ SMT solver state
+      \item \pause $\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$ judgement
     \end{itemize}
   \end{frame}
   \begin{frame}{L0 big-step operational semantics}
+    
     \begin{prooftree}
       \AxiomC{ }
       \UnaryInfC{$\BS{\skipE}{X}{\Phi}{(X, \Phi)}$}
     \end{prooftree}
-    
+
+    \pause \medskip
+
     \begin{prooftree}
       \AxiomC{$\varphi \in \mathbb{F}(X)$}
       \UnaryInfC{$\BS{\addE~\varphi}{X}{\Phi}{(X, \Phi \cup \{\varphi\})}$}
     \end{prooftree}
+
+    \pause \medskip
 
     \begin{prooftree}
       \AxiomC{$x \notin X$}
       \UnaryInfC{$\BS{\declareE{x}}{X}{\Phi}{(X \cup \{x\}, \Phi)}$}
     \end{prooftree}
     
-    \medskip
+    \pause \medskip
     
     \begin{prooftree}
       \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
@@ -163,7 +197,7 @@ end
       \UnaryInfC{$\BS{\localE~\epsilon}{X}{\Phi}{(X, \Phi)}$}
     \end{prooftree}
 
-    \medskip
+    \pause \medskip
 
     \begin{prooftree}
       \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
@@ -172,7 +206,7 @@ end
       \TrinaryInfC{$\BS{\whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3}}{X}{\Phi}{(X'', \Phi'')}$}
     \end{prooftree}
     
-    \medskip
+    \pause \medskip
     
     \begin{prooftree}
       \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
@@ -183,8 +217,8 @@ end
   \end{frame}
   \begin{frame}[fragile]{L0 Elixir implementation}
     A simple implementation in Elixir is straightforward by using our SMT-LIB binding
-
-    \bigskip
+    \small
+    \pause \bigskip
 
     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 defmacro eval(conn, {:local, _, [e]}) do
@@ -198,6 +232,7 @@ end
     \end{lstlisting}
   \end{frame}
   \begin{frame}[fragile]{L0 Elixir example}
+    \small
     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 eval conn do
   declare_const :x
@@ -211,6 +246,7 @@ end
     \end{lstlisting}
   \end{frame}
   \begin{frame}[fragile]{L0 Elixir example}
+    \small
     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 eval conn do
   declare_const :x
@@ -226,9 +262,9 @@ end
   \section{Verification Intermediate Representation}
   \begin{frame}{The L1 language}
     \begin{itemize}
-      \item Verification \gls*{ir} 
-      \item It models Elixir expressions dynamically typed
-      \item Statements for writing verification code
+      \item \pause Verification \gls*{ir} 
+      \item \pause It models Elixir expressions dynamically typed
+      \item \pause Statements for writing verification code
     \end{itemize}
   \end{frame}
   \begin{frame}{L1 expressions syntax}
@@ -245,7 +281,7 @@ end
       \end{array}
     \]
 
-    where $c$ is a constant literal of a simple type, currently integer or 
+    \pause where $c$ is a constant literal of a simple type, currently integer or 
     boolean, and $f \in \Sigma^1$ a function name
   \end{frame}
   \begin{frame}{L1 statements syntax}
@@ -263,6 +299,10 @@ end
   \end{frame}
   \begin{frame}[fragile]{Built-in SMT-LIB declarations}
     Foundation to represent L1 expressions in the underlying many-sorted logic
+
+    \pause
+
+    \small
     \begin{verbatim}
 (declare-sort Term 0)
 (declare-sort Type 0)
@@ -281,7 +321,9 @@ end
   \begin{frame}{Built-in L1 specifications}
     Built-in \textbf{sets} of pair/postconditions for functions to 
     model their behavior in Elixir
-    
+
+    \pause
+
     \[
       \begin{array}{l}
       \{ \isinteger{x} \wedge \isinteger{y} \}\\
@@ -293,6 +335,8 @@ end
       \end{array}
     \]
 
+    \pause
+
     There could be more for other types (e.g. float)
   \end{frame}
   \begin{frame}{Translation from L1 into L0}
@@ -303,11 +347,13 @@ end
       \end{array}
     \]
 
-    $\trExp{\gamma}{e}$ returns a tuple $(\epsilon, t)$:
+    \pause
+
+    $\trExp{\gamma}{e}$ returns a tuple $(\epsilon, t)$ where
     \begin{itemize}
-      \item $\epsilon$, an L0 expression that models the semantics of $e$
-      \item $t$, a term in the underlying logic to refer to the result of $e$
-      \item $\gamma$ models known facts by the time $e$ is evaluated
+      \item \pause $\epsilon$ is an L0 expression that models the semantics of $e$
+      \item \pause $t$ is a term in the underlying logic to refer to the result of $e$
+      \item \pause $\gamma$ models known facts by the time $e$ is evaluated
     \end{itemize}
   \end{frame}
   \begin{frame}{Translation of L1 lists}
@@ -351,6 +397,8 @@ end
   \end{frame}
   \begin{frame}[fragile]{L1 Elixir implementation}
     Our implementation is quite direct from the formalization
+
+    \pause
     \small
     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 def tr_exp(_, [{:|, _, [h, t]}]) do
@@ -370,6 +418,7 @@ end
     \end{lstlisting}
   \end{frame}
   \begin{frame}[fragile]{L1 Elixir example}
+    \small
     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 import Boogiex
 
@@ -387,8 +436,8 @@ end
   \section{Elixir Code Verification}
   \begin{frame}{The L2 language}
     \begin{itemize}
-      \item The highest level language of our verification stack
-      \item Elixir (subset) + ghost verification code
+      \item \pause The highest level language of our verification stack
+      \item \pause Elixir (subset) + ghost verification code
     \end{itemize}
   \end{frame}
   \begin{frame}{L2 expressions syntax}
@@ -407,7 +456,7 @@ end
       \end{array}
     \]
 
-    where $P, P_1, \dots P_n$ are patterns:
+    \pause where $P, P_1, \dots P_n$ are patterns:
     \[
       \Pat \ni P ::= c \mid x \mid [\:] \mid [P_1 \mid P_2] \mid \{ P_1, \ldots, P_n \}
     \]
@@ -420,24 +469,86 @@ end
       \end{array}
     \]
 
-    $\trEXP{E}$ generates a sequence of pairs $(S, e)$:
+    \pause $\trEXP{E}$ generates a sequence of pairs $(S, e)$ where
     \begin{itemize}
-      \item $S$, the L1 statement that models the semantics of $E$
-      \item $e$, L1 expression that represents the result to which $E$ is evaluated
-      \item Each pair corresponds to an execution path
+      \item \pause $S$ is an L1 statement that models the semantics of $E$
+      \item \pause $e$ is an L1 expression that represents the result to which $E$ is evaluated
+      \item \pause Each pair corresponds to an execution path
     \end{itemize}
   \end{frame}
-  \begin{frame}{Translation of L2 list patterns}
-    TODO
+  \begin{frame}{Translation of L2 lists pattern matching}
+    $\trMatch{e}{P}$ returns an L1 expression that is a $\mathit{boolean}$ 
+    term and is evaluated to $\true$ if and only if $e$ matches $P$
+
+    \pause 
+
+    \[
+      \begin{array}{l}
+        \trMatch{e}{[P_1\mid P_2]} = \\
+        \qquad\textit{is-nelist}(e)~\mathbf{and}\\
+        \qquad\trMatch{\textit{hd}(e)}{P_1}~\mathbf{and}\\
+        \qquad\trMatch{\textit{tl}(e)}{P_2}
+      \end{array}
+    \]
   \end{frame}
   \begin{frame}{Translation of L2 pattern matching expressions}
-    TODO
+    \[
+      \begin{array}{l}
+      \trEXP{P = E} = [(S_1;S_1',e_1), \dots, (S_n;S_n', e_n)] \\
+      \qquad 
+      \begin{array}{ll}
+      \textbf{where} & [(S_1,e_1),\dots,(S_n, e_n)] = \trEXP{E} \\
+      & \{y_1, \ldots, y_m\} = \mathit{vars}(P) \\
+      & \forall i \in \{1..n\}: S_i' = \left(
+      \begin{array}{l}
+      \assertE~\trMatch{e_i}{P};\\
+      \havocE~y_1;\\
+      \vdots\\
+      \havocE~y_m;\\
+      \assumeE~e_i ~\texttt{===}~ P\\
+      \end{array}
+      \right)
+      \end{array}
+      \end{array}
+    \]
   \end{frame}
   \begin{frame}{Verifying user-defined functions}
-    TODO
+    A single clause of a function with arity $n$:
+
+    \[
+    \mathit{def} \equiv \left(\{ p \}  \quad (P_1, \dots, P_n)~B \quad \{ q \} \right)
+    \]
+
+    \pause where $p \in \Exp{1}$ and $q \in \Exp{1}$ denote a specified precondition and a
+    postcondition, $P_1, \dots, P_n$ are the parameter patterns and $B \in \Exp{2}$
+    is its defined body
+
+    \pause \medskip
+
+    Clauses of a function $f$ with arity $n$:
+
+    \[
+      \Defs{f/n} = (\mathit{def}_1,\dots,\mathit{def}_k)
+    \]
+  \end{frame}
+  \begin{frame}{Verifying user-defined functions}
+    \begin{enumerate}
+      \item \pause Transform the function definition clauses into an L2 case 
+        expression with the parameter variables free and a trivial branch
+      \item \pause Apply Static Single-Assignment to allow rebinding variables
+      \item \pause Translate it into the corresponding execution paths in our \gls*{ir}
+      \item \pause Translate each path into an L0 statement
+      \item \pause Verify them independently of each other
+    \end{enumerate}
+
+    \pause \textbf{Note:} our formalization does not address currently the verification 
+    of user-defined function invocations (i.e. their specifications and body unfolding),
+    but our implementation does it by automatically generating ghost code.
   \end{frame}
   \begin{frame}[fragile]{L2 Elixir implementation}
     Again, our implementation is quite direct from the formalization
+
+    \pause
     \small
     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
 def tr_match({:|, _, [p1, p2]}, e) do
@@ -462,14 +573,14 @@ end
   \section{Conclusions}
   \begin{frame}{Conclusions}
     \begin{itemize}
-      \item We have developed a framework for Elixir code verification across several areas (\acrshort*{smt} solver integration, a verification \gls*{ir} and Elixir code verification)
-      \item Future work may address concurrency and termination
-      \item Also, we have left several improvements on the way
+      \item \pause We have developed a framework for Elixir code verification across several areas (i.e. \acrshort*{smt} solver integration, verification \gls*{ir} and code verification)
+      \item \pause Future work may address concurrent code and total verification
+      \item \pause Also, we have left several improvements on the way:
       \begin{itemize}
-        \item More SMT-LIB and \acrshort*{smt} solvers support
-        \item Extend our \gls*{ir} to model more Elixir value types and built-in functions
-        \item Extend the Elixir subset to verify (e.g. pin operator and higher-order)
-        \item The final tool is in an early proof of concept stage
+        \item \pause More of the SMT-LIB standard and \acrshort*{smt} solvers support
+        \item \pause Extend our \gls*{ir} to model more Elixir value types and built-in functions
+        \item \pause Extend the Elixir subset to verify (e.g. pin operator and higher-order)
+        \item \pause The current implementation is in an early proof of concept stage
       \end{itemize}
     \end{itemize}
   \end{frame}
