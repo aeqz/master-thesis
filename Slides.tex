@@ -57,7 +57,11 @@
       \end{itemize}
       \item \pause Dafny:
       \begin{itemize}
-        \item \pause Specify code with pre/post conditions
+        \item \pause Specify code with pre/postconditions
+        \item \pause Help the system by providing ghost verification code
+      \end{itemize}
+      \item \pause Dafny under the hood:
+      \begin{itemize}
         \item \pause Compiled to Boogie, a verification \gls*{ir}
         \item \pause Verification conditions discharged by the Z3 theorem prover
         \item \pause Compiled also to other programming languages to be executed
@@ -93,6 +97,24 @@
     Scope: only a subset of sequential Elixir for the moment, and partial 
     verification (i.e. not verifying termination)
   \end{frame}
+  \begin{frame}[fragile]{A valid Elixir program}
+    \small
+    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+result =
+  if selector === 1 do
+    1
+  else
+    false
+  end
+
+result =
+  if selector === 1 do
+    result + 1
+  else
+    not result
+  end
+    \end{lstlisting}
+  \end{frame}
   \begin{frame}{Plan}
 
     \begin{enumerate}
@@ -104,11 +126,11 @@
   \end{frame}
   \section{SMT Solver Integration in Elixir}
   \begin{frame}{Elixir SMT-LIB binding}
-    We have developed an SMT-LIB binding for Elixir with the following features:
+    We have developed an SMT-LIB (an SMT standard) binding for Elixir with the following features:
 
     \begin{itemize}
       \item \pause An SMT-LIB (subset) \gls*{dsl}
-      \item \pause Different \acrshort*{smt} solvers can be easily integrated
+      \item \pause Different \acrshort*{smt} solvers that implement SMT-LIB can be easily integrated
       \item \pause Out-of-the-box support for Z3
     \end{itemize}
   \end{frame}
@@ -299,23 +321,24 @@ end
   \end{frame}
   \begin{frame}[fragile]{Built-in SMT-LIB declarations}
     Foundation to represent L1 expressions in the underlying many-sorted logic
+    (all of them have sort $\Term$ and can be associated to a $\mathit{Type}$):
 
     \pause
 
     \small
     \begin{verbatim}
-(declare-sort Term 0)
-(declare-sort Type 0)
-...
-(declare-const int Type)
-(declare-const bool Type)
-(assert (distinct int bool))
-...
-(declare-fun type (Term) Type)
-(define-fun is_integer ((x Term)) Bool 
-  (= (type x) int)
-)
-...
+    (declare-sort Term 0)
+    (declare-sort Type 0)
+    ...
+    (declare-const int Type)
+    (declare-const bool Type)
+    (assert (distinct int bool))
+    ...
+    (declare-fun type (Term) Type)
+    (define-fun is_integer ((x Term)) Bool 
+      (= (type x) int)
+    )
+    ...
     \end{verbatim}
   \end{frame}
   \begin{frame}{Built-in L1 specifications}
@@ -543,7 +566,7 @@ end
 
     \pause \textbf{Note:} our formalization does not address currently the verification 
     of user-defined function invocations (i.e. their specifications and body unfolding),
-    but our implementation does it by automatically generating ghost code.
+    but our implementation does it by automatically generating ghost code
   \end{frame}
   \begin{frame}[fragile]{L2 Elixir implementation}
     Again, our implementation is quite direct from the formalization
