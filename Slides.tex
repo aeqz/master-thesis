@@ -38,7 +38,7 @@
 
 \title{\titulo}
 \subtitle{Master's Degree in Formal Methods and Computer Engineering}
-\date{\today}
+\date{July 7, 2022}
 \author{\autor \\ Supervisor: Manuel Montenegro Montes}
 \institute{Complutense University of Madrid}
 \begin{document}
@@ -53,18 +53,18 @@
       \item \pause Light-weight program verification systems:
       \begin{itemize}
         \item \pause Allow specifying and verifying code
-        \item \pause Reduce the required human intervention
+        \item \pause Reduce human intervention
       \end{itemize}
       \item \pause Dafny:
       \begin{itemize}
         \item \pause Specify code with pre/postconditions
-        \item \pause Help the system by providing ghost verification code
+        \item \pause Help the system by providing ghost verification annotations
       \end{itemize}
       \item \pause Dafny under the hood:
       \begin{itemize}
-        \item \pause Compiled to Boogie, a verification \gls*{ir}
+        \item \pause Compiled to Boogie, an \gls*{ir} for verification
         \item \pause Verification conditions discharged by the Z3 theorem prover
-        \item \pause Compiled also to other programming languages to be executed
+        \item \pause Compiled also to other programming languages
       \end{itemize}
     \end{itemize}
   \end{frame}
@@ -82,7 +82,7 @@
     \end{itemize}
   \end{frame}
   \begin{frame}{Our aim}
-    Provide a system similar to that of Dafny but specialized for Elixir
+    Provide a system similar to Dafny but specialized for Elixir
     and implemented in Elixir itself
 
     \pause \bigskip
@@ -116,12 +116,11 @@ result =
     \end{lstlisting}
   \end{frame}
   \begin{frame}{Plan}
-
     \begin{enumerate}
       \item \pause \acrshort*{smt} solver integration in Elixir
       \item \pause L0, a low level language close to the \acrshort*{smt} solver
       \item \pause L1, a verification \gls*{ir} for dynamically typed Elixir expressions
-      \item \pause L2, a high level language that models Elixir + verification code
+      \item \pause L2, a high level language that models Elixir + verification annotations
     \end{enumerate}
   \end{frame}
   \section{SMT Solver Integration in Elixir}
@@ -129,7 +128,7 @@ result =
     We have developed an SMT-LIB (an SMT standard) binding for Elixir with the following features:
 
     \begin{itemize}
-      \item \pause An SMT-LIB (subset) \gls*{dsl}
+      \item \pause A \gls*{dsl} for a subset of SMT-LIB
       \item \pause Different \acrshort*{smt} solvers that implement SMT-LIB can be easily integrated
       \item \pause Out-of-the-box support for Z3
     \end{itemize}
@@ -237,22 +236,22 @@ end
       \TrinaryInfC{$\BS{\whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3}}{X}{\Phi}{(X'', \Phi'')}$}
     \end{prooftree}
   \end{frame}
-  \begin{frame}[fragile]{L0 Elixir implementation}
-    A simple implementation in Elixir is straightforward by using our SMT-LIB binding
-    \small
-    \pause \bigskip
+%   \begin{frame}[fragile]{L0 Elixir implementation}
+%     A simple implementation in Elixir is straightforward by using our SMT-LIB binding
+%     \small
+%     \pause \bigskip
 
-    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-defmacro eval(conn, {:local, _, [e]}) do
-  quote do
-    conn = unquote(conn)
-    :ok = push conn
-    eval conn, unquote(e)
-    :ok = pop conn
-  end
-end
-    \end{lstlisting}
-  \end{frame}
+%     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+% defmacro eval(conn, {:local, _, [e]}) do
+%   quote do
+%     conn = unquote(conn)
+%     :ok = push conn
+%     eval conn, unquote(e)
+%     :ok = pop conn
+%   end
+% end
+%     \end{lstlisting}
+%   \end{frame}
   \begin{frame}[fragile]{L0 Elixir example}
     \small
     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
@@ -281,12 +280,12 @@ eval conn do
 end
     \end{lstlisting}
   \end{frame}
-  \section{Verification Intermediate Representation}
+  \section{Intermediate Representation for Verification}
   \begin{frame}{The L1 language}
     \begin{itemize}
-      \item \pause Verification \gls*{ir} 
-      \item \pause It models Elixir expressions dynamically typed
-      \item \pause Statements for writing verification code
+      \item \pause \gls*{ir} for Verification
+      \item \pause It models dynamically typed Elixir expressions
+      \item \pause Statements for writing verification annotations (ghost code)
     \end{itemize}
   \end{frame}
   \begin{frame}{L1 expressions syntax}
@@ -320,7 +319,7 @@ end
     \]
   \end{frame}
   \begin{frame}[fragile]{Built-in SMT-LIB declarations}
-    Foundation to represent L1 expressions in the underlying many-sorted logic
+    Prelude to represent L1 expressions in the underlying many-sorted logic
     (all of them have sort $\Term$ and can be associated to a $\mathit{Type}$):
 
     \pause
@@ -379,7 +378,7 @@ end
       \item \pause $\gamma$ models known facts by the time $e$ is evaluated
     \end{itemize}
   \end{frame}
-  \begin{frame}{Translation of L1 lists}
+  \begin{frame}[fragile]{Translation of L1 lists}
     \[
       \begin{array}{l}
       \trExp{\_}{[]} \equiv (
@@ -398,48 +397,57 @@ end
         \right]
       \end{array}
     \]
-  \end{frame}
-  \begin{frame}{Translation of L1 lists example}
-    \[
-      \begin{array}{l}
-      \trExp{\gamma}{[2, x]} \equiv (\epsilon, \mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil})))\\
-      \qquad \textbf{where } \epsilon = \left[ 
-      \begin{array}{l}
-      \addE~\mathit{is\mbox{-}integer}(\mathit{integer\mbox{-}lit}(2));\\
-      \addE~\mathit{integer\mbox{-}value}(\mathit{integer\mbox{-}lit}(2)) = 2;\\
-      \addE~\isnelist{\mathit{cons}(\hat{x}, \mathit{nil})};\\
-      \addE~\mathit{hd}(\mathit{cons}(\hat{x}, \mathit{nil})) = \hat{x};\\
-      \addE~\mathit{tl}(\mathit{cons}(\hat{x}, \mathit{nil})) = \mathit{nil};\\
-      \addE~\isnelist{\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))};\\
-      \addE~\mathit{hd}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = 2;\\
-      \addE~\mathit{tl}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = \mathit{cons}(\hat{x}, \mathit{nil});\\
-      \end{array}
-      \right]
-      \end{array}
-    \]
-  \end{frame}
-  \begin{frame}[fragile]{L1 Elixir implementation}
-    Our implementation is quite direct from the formalization
 
-    \pause
-    \small
-    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-def tr_exp(_, [{:|, _, [h, t]}]) do
-  {h, h_sem} = tr_exp(_, h)
-  {y, t_sem} = tr_exp(_, t)
-  t = 
-    quote(do: :cons.(unquote(h), unquote(t)))
+    \medskip \pause
 
-  { t, quote do
-    unquote(h_sem)
-    unquote(t_sem)
-    add :is_nonempty_list.(unquote(t))
-    add :hd.(unquote(t)) == unquote(h)
-    add :tl.(unquote(t)) == unquote(t)
-  end }
-end
-    \end{lstlisting}
+    \textbf{Remember:} the constants and functions involved in the result of the translation 
+    must be defined in the \acrshort*{smt} prelude. For example:
+    \begin{verbatim}
+    (declare-const nil Term)
+    (declare-fun cons (Term Term) Term)
+    \end{verbatim}
   \end{frame}
+  % \begin{frame}{Translation of L1 lists example}
+  %   \[
+  %     \begin{array}{l}
+  %     \trExp{\gamma}{[2, x]} \equiv (\epsilon, \mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil})))\\
+  %     \qquad \textbf{where } \epsilon = \left[ 
+  %     \begin{array}{l}
+  %     \addE~\mathit{is\mbox{-}integer}(\mathit{integer\mbox{-}lit}(2));\\
+  %     \addE~\mathit{integer\mbox{-}value}(\mathit{integer\mbox{-}lit}(2)) = 2;\\
+  %     \addE~\isnelist{\mathit{cons}(\hat{x}, \mathit{nil})};\\
+  %     \addE~\mathit{hd}(\mathit{cons}(\hat{x}, \mathit{nil})) = \hat{x};\\
+  %     \addE~\mathit{tl}(\mathit{cons}(\hat{x}, \mathit{nil})) = \mathit{nil};\\
+  %     \addE~\isnelist{\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))};\\
+  %     \addE~\mathit{hd}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = 2;\\
+  %     \addE~\mathit{tl}(\mathit{cons}(2, \mathit{cons}(\hat{x}, \mathit{nil}))) = \mathit{cons}(\hat{x}, \mathit{nil});\\
+  %     \end{array}
+  %     \right]
+  %     \end{array}
+  %   \]
+  % \end{frame}
+%   \begin{frame}[fragile]{L1 Elixir implementation}
+%     Our implementation is quite direct from the formalization
+
+%     \pause
+%     \small
+%     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+% def tr_exp(_, [{:|, _, [h, t]}]) do
+%   {h, h_sem} = tr_exp(_, h)
+%   {y, t_sem} = tr_exp(_, t)
+%   t = 
+%     quote(do: :cons.(unquote(h), unquote(t)))
+
+%   { t, quote do
+%     unquote(h_sem)
+%     unquote(t_sem)
+%     add :is_nonempty_list.(unquote(t))
+%     add :hd.(unquote(t)) == unquote(h)
+%     add :tl.(unquote(t)) == unquote(t)
+%   end }
+% end
+%     \end{lstlisting}
+%   \end{frame}
   \begin{frame}[fragile]{L1 Elixir example}
     \small
     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
@@ -460,7 +468,7 @@ end
   \begin{frame}{The L2 language}
     \begin{itemize}
       \item \pause The highest level language of our verification stack
-      \item \pause Elixir (subset) + ghost verification code
+      \item \pause A subset of Elixir + ghost verification annotations
     \end{itemize}
   \end{frame}
   \begin{frame}{L2 expressions syntax}
@@ -557,37 +565,37 @@ end
   \begin{frame}{Verifying user-defined functions}
     \begin{enumerate}
       \item \pause Transform the function definition clauses into an L2 case 
-        expression with the parameter variables free and a trivial branch
-      \item \pause Apply Static Single-Assignment to allow rebinding variables
-      \item \pause Translate it into the corresponding execution paths in our \gls*{ir}
-      \item \pause Translate each path into an L0 statement
-      \item \pause Verify them independently of each other
+        expression with the parameter variables free and a branch that trivially matches
+      \item \pause Apply Static Single-Assignment to allow rebinding of variables
+      \item \pause Translate into the corresponding execution paths in our \gls*{ir}
+      \item \pause Translate each path into an L0 expression
+      \item \pause Verify paths independently of each other
     \end{enumerate}
 
     \pause \textbf{Note:} our formalization does not address currently the verification 
     of user-defined function invocations (i.e. their specifications and body unfolding),
     but our implementation does it by automatically generating ghost code
   \end{frame}
-  \begin{frame}[fragile]{L2 Elixir implementation}
-    Again, our implementation is quite direct from the formalization
+%   \begin{frame}[fragile]{L2 Elixir implementation}
+%     Again, our implementation is quite direct from the formalization
 
-    \pause
-    \small
-    \begin{lstlisting}[language=elixir,numbers=none,frame=none]
-def tr_match({:|, _, [p1, p2]}, e) do
-  tr_1 = 
-    tr_match(p1, quote(do: hd(unquote(e))))
-  tr_2 = 
-    tr_match(p2, quote(do: tl(unquote(e))))
+%     \pause
+%     \small
+%     \begin{lstlisting}[language=elixir,numbers=none,frame=none]
+% def tr_match({:|, _, [p1, p2]}, e) do
+%   tr_1 = 
+%     tr_match(p1, quote(do: hd(unquote(e))))
+%   tr_2 = 
+%     tr_match(p2, quote(do: tl(unquote(e))))
 
-  quote(do:
-    is_list(unquote(e)) and 
-    unquote(e) !== [] and
-    unquote(tr_1) and unquote(tr_2)
-  )
-end
-    \end{lstlisting}
-  \end{frame}
+%   quote(do:
+%     is_list(unquote(e)) and 
+%     unquote(e) !== [] and
+%     unquote(tr_1) and unquote(tr_2)
+%   )
+% end
+%     \end{lstlisting}
+%   \end{frame}
   \begin{frame}[plain,c]{L2 Elixir example}
     \begin{center}
       \Huge Live demo
@@ -600,7 +608,7 @@ end
       \item \pause Future work may address concurrent code and total verification
       \item \pause Also, we have left several improvements on the way:
       \begin{itemize}
-        \item \pause More of the SMT-LIB standard and \acrshort*{smt} solvers support
+        \item \pause More of the SMT-LIB standard and support for other \acrshort*{smt} solvers
         \item \pause Extend our \gls*{ir} to model more Elixir value types and built-in functions
         \item \pause Extend the Elixir subset to verify (e.g. pin operator and higher-order)
         \item \pause The current implementation is in an early proof of concept stage
