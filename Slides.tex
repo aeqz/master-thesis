@@ -173,69 +173,69 @@ end
     \pause where $x \in V$ is a variable name and $\varphi \in \mathbb{F}$ is a 
     formula with many-sorted terms $t \in \mathbb{T}$
   \end{frame}
-  \begin{frame}{L0 big-step operational semantics}
-    Notation:
-    \begin{itemize}
-      \item \pause $X \subseteq V$ set of variable names
-      \item \pause $\Phi \subseteq \mathbb{F}$ set of formulas
-      \item \pause $\mathbb{F}(X)$ subset of $\mathbb{F}$ with free variables in $X$
-      \item \pause $(X, \Phi)$ SMT solver state
-      \item \pause $\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$ judgement
-    \end{itemize}
-  \end{frame}
-  \begin{frame}{L0 big-step operational semantics}
+  % \begin{frame}{L0 big-step operational semantics}
+  %   Notation:
+  %   \begin{itemize}
+  %     \item \pause $X \subseteq V$ set of variable names
+  %     \item \pause $\Phi \subseteq \mathbb{F}$ set of formulas
+  %     \item \pause $\mathbb{F}(X)$ subset of $\mathbb{F}$ with free variables in $X$
+  %     \item \pause $(X, \Phi)$ SMT solver state
+  %     \item \pause $\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$ judgement
+  %   \end{itemize}
+  % \end{frame}
+  % \begin{frame}{L0 big-step operational semantics}
     
-    \begin{prooftree}
-      \AxiomC{ }
-      \UnaryInfC{$\BS{\skipE}{X}{\Phi}{(X, \Phi)}$}
-    \end{prooftree}
+  %   \begin{prooftree}
+  %     \AxiomC{ }
+  %     \UnaryInfC{$\BS{\skipE}{X}{\Phi}{(X, \Phi)}$}
+  %   \end{prooftree}
 
-    \pause \medskip
+  %   \pause \medskip
 
-    \begin{prooftree}
-      \AxiomC{$\varphi \in \mathbb{F}(X)$}
-      \UnaryInfC{$\BS{\addE~\varphi}{X}{\Phi}{(X, \Phi \cup \{\varphi\})}$}
-    \end{prooftree}
+  %   \begin{prooftree}
+  %     \AxiomC{$\varphi \in \mathbb{F}(X)$}
+  %     \UnaryInfC{$\BS{\addE~\varphi}{X}{\Phi}{(X, \Phi \cup \{\varphi\})}$}
+  %   \end{prooftree}
 
-    \pause \medskip
+  %   \pause \medskip
 
-    \begin{prooftree}
-      \AxiomC{$x \notin X$}
-      \UnaryInfC{$\BS{\declareE{x}}{X}{\Phi}{(X \cup \{x\}, \Phi)}$}
-    \end{prooftree}
+  %   \begin{prooftree}
+  %     \AxiomC{$x \notin X$}
+  %     \UnaryInfC{$\BS{\declareE{x}}{X}{\Phi}{(X \cup \{x\}, \Phi)}$}
+  %   \end{prooftree}
     
-    \pause \medskip
+  %   \pause \medskip
     
-    \begin{prooftree}
-      \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
-      \AxiomC{$\BS{\epsilon_2}{X'}{\Phi'}{(X'', \Phi'')}$}
-      \BinaryInfC{$\BS{\epsilon_1;\epsilon_2}{X}{\Phi}{(X'', \Phi'')}$}
-    \end{prooftree}
-  \end{frame}
-  \begin{frame}{L0 big-step operational semantics}
-    \begin{prooftree}
-      \AxiomC{$\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$}
-      \UnaryInfC{$\BS{\localE~\epsilon}{X}{\Phi}{(X, \Phi)}$}
-    \end{prooftree}
+  %   \begin{prooftree}
+  %     \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
+  %     \AxiomC{$\BS{\epsilon_2}{X'}{\Phi'}{(X'', \Phi'')}$}
+  %     \BinaryInfC{$\BS{\epsilon_1;\epsilon_2}{X}{\Phi}{(X'', \Phi'')}$}
+  %   \end{prooftree}
+  % \end{frame}
+  % \begin{frame}{L0 big-step operational semantics}
+  %   \begin{prooftree}
+  %     \AxiomC{$\BS{\epsilon}{X}{\Phi}{(X', \Phi')}$}
+  %     \UnaryInfC{$\BS{\localE~\epsilon}{X}{\Phi}{(X, \Phi)}$}
+  %   \end{prooftree}
 
-    \pause \medskip
+  %   \pause \medskip
 
-    \begin{prooftree}
-      \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
-      \AxiomC{$\unsat{\Phi'}$}
-      \AxiomC{$\BS{\epsilon_2}{X}{\Phi}{(X'', \Phi'')}$}
-      \TrinaryInfC{$\BS{\whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3}}{X}{\Phi}{(X'', \Phi'')}$}
-    \end{prooftree}
+  %   \begin{prooftree}
+  %     \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
+  %     \AxiomC{$\unsat{\Phi'}$}
+  %     \AxiomC{$\BS{\epsilon_2}{X}{\Phi}{(X'', \Phi'')}$}
+  %     \TrinaryInfC{$\BS{\whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3}}{X}{\Phi}{(X'', \Phi'')}$}
+  %   \end{prooftree}
     
-    \pause \medskip
+  %   \pause \medskip
     
-    \begin{prooftree}
-      \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
-      \AxiomC{$\neg\unsat{\Phi'}$}
-      \AxiomC{$\BS{\epsilon_3}{X}{\Phi}{(X'', \Phi'')}$}
-      \TrinaryInfC{$\BS{\whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3}}{X}{\Phi}{(X'', \Phi'')}$}
-    \end{prooftree}
-  \end{frame}
+  %   \begin{prooftree}
+  %     \AxiomC{$\BS{\epsilon_1}{X}{\Phi}{(X', \Phi')}$}
+  %     \AxiomC{$\neg\unsat{\Phi'}$}
+  %     \AxiomC{$\BS{\epsilon_3}{X}{\Phi}{(X'', \Phi'')}$}
+  %     \TrinaryInfC{$\BS{\whenUnsatE{\epsilon_1}{\epsilon_2}{\epsilon_3}}{X}{\Phi}{(X'', \Phi'')}$}
+  %   \end{prooftree}
+  % \end{frame}
 %   \begin{frame}[fragile]{L0 Elixir implementation}
 %     A simple implementation in Elixir is straightforward by using our SMT-LIB binding
 %     \small
@@ -487,7 +487,7 @@ end
       \end{array}
     \]
 
-    \pause where $P, P_1, \dots P_n$ are patterns:
+    \pause where $e, f_1, \dots, f_n \in \Exp{1}$ and $P, P_1, \dots P_n$ are patterns:
     \[
       \Pat \ni P ::= c \mid x \mid [\:] \mid [P_1 \mid P_2] \mid \{ P_1, \ldots, P_n \}
     \]
@@ -507,21 +507,21 @@ end
       \item \pause Each pair corresponds to an execution path
     \end{itemize}
   \end{frame}
-  \begin{frame}{Translation of L2 lists pattern matching}
-    $\trMatch{e}{P}$ returns an L1 expression that is a $\mathit{boolean}$ 
-    term and is evaluated to $\true$ if and only if $e$ matches $P$
+  % \begin{frame}{Translation of L2 lists pattern matching}
+  %   $\trMatch{e}{P}$ returns an L1 expression that is a $\mathit{boolean}$ 
+  %   term and is evaluated to $\true$ if and only if $e$ matches $P$
 
-    \pause 
+  %   \pause 
 
-    \[
-      \begin{array}{l}
-        \trMatch{e}{[P_1\mid P_2]} = \\
-        \qquad\textit{is-nelist}(e)~\mathbf{and}\\
-        \qquad\trMatch{\textit{hd}(e)}{P_1}~\mathbf{and}\\
-        \qquad\trMatch{\textit{tl}(e)}{P_2}
-      \end{array}
-    \]
-  \end{frame}
+  %   \[
+  %     \begin{array}{l}
+  %       \trMatch{e}{[P_1\mid P_2]} = \\
+  %       \qquad\textit{is-nelist}(e)~\mathbf{and}\\
+  %       \qquad\trMatch{\textit{hd}(e)}{P_1}~\mathbf{and}\\
+  %       \qquad\trMatch{\textit{tl}(e)}{P_2}
+  %     \end{array}
+  %   \]
+  % \end{frame}
   \begin{frame}{Translation of L2 pattern matching expressions}
     \[
       \begin{array}{l}
